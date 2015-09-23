@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.js"></script>
+
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+   <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+   <link rel="stylesheet" href="https://rawgit.com/lvoogdt/Leaflet.awesome-markers/2.0/develop/dist/leaflet.awesome-markers.css">
+   <script src="https://rawgithub.com/lvoogdt/Leaflet.awesome-markers/2.0/develop/dist/leaflet.awesome-markers.js"></script>
+
+
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.Default.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.css">
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/leaflet.markercluster-src.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/leaflet.markercluster.js"></script>
+
+   <link rel="stylesheet" href="https://birdage.github.io/Leaflet.awesome-markers/dist/leaflet.awesome.rotate.css">
+
+   
+   
+   
+   
+
+   <style>
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #map {
+        position:absolute;
+        top:0;
+        bottom:0;
+        right:0;
+        left:0;
+      }
+
+   </style>
+</head>
+
+<body>
+
+   <div class="folium-map" id="folium_8271fdf1d2c746808dc502381bd1b417" style="width: 100%; height: 100%"></div>
+
+   <script>
+
+      
+
+      var base_tile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          minZoom: 1,
+          attribution: 'Map data (c) <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+      });
+
+      var baseLayer = {
+        "Base Layer": base_tile
+      };
+
+      /*
+      addition of the wms layers
+      */
+
+      
+
+      /*
+      addition of the tile layers
+      */
+      
+
+      /*
+      list of layers to be added
+      */
+      var layer_list = {
+      
+      };
+
+      /*
+      Bounding box.
+      */
+      var southWest = L.latLng(-90, -180),
+          northEast = L.latLng(90, 180),
+          bounds = L.latLngBounds(southWest, northEast);
+
+      /*
+      Creates the map and adds the selected layers
+      */
+      var map = L.map('folium_8271fdf1d2c746808dc502381bd1b417', {
+                                       center:[40.842755, -119.07785],
+                                       zoom: 16,
+                                       maxBounds: bounds,
+                                       layers: [base_tile]
+                                     });
+
+      L.control.layers(baseLayer, layer_list).addTo(map);
+
+      //cluster group
+      var clusteredmarkers = L.markerClusterGroup();
+      //section for adding clustered markers
+      
+      //add the clustered markers to the group anyway
+      map.addLayer(clusteredmarkers);
+
+      
+
+      
+      var circle_1 = L.circle([40.84274, -119.0779], 10, {
+                            color: '#00FF00',
+                            fillColor: '#00FF00',
+                            fillOpacity: 0.6
+                            });
+      circle_1.bindPopup("Start -- Lat, Lon: 40.8427, -119.0779");
+      circle_1._popup.options.maxWidth = 300;
+      map.addLayer(circle_1)
+      
+      var circle_2 = L.circle([40.84277, -119.0778], 10, {
+                            color: '#FF0000',
+                            fillColor: '#FF0000',
+                            fillOpacity: 0.6
+                            });
+      circle_2.bindPopup("Target -- Lat, Lon: 40.8428, -119.0778");
+      circle_2._popup.options.maxWidth = 300;
+      map.addLayer(circle_2)
+      
+      var circle_3 = L.circle([40.84274, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_3)
+      
+      var circle_4 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_4)
+      
+      var circle_5 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_5)
+      
+      var circle_6 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_6)
+      
+      var circle_7 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_7)
+      
+      var circle_8 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_8)
+      
+      var circle_9 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_9)
+      
+      var circle_10 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_10)
+      
+      var circle_11 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_11)
+      
+      var circle_12 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_12)
+      
+      var circle_13 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_13)
+      
+      var circle_14 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_14)
+      
+      var circle_15 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_15)
+      
+      var circle_16 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_16)
+      
+      var circle_17 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_17)
+      
+      var circle_18 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_18)
+      
+      var circle_19 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_19)
+      
+      var circle_20 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_20)
+      
+      var circle_21 = L.circle([40.84277, -119.0778], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_21)
+      
+
+      
+
+      
+
+      
+
+      
+
+
+
+   </script>
+
+</body>

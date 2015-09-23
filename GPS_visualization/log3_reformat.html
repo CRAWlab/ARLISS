@@ -1,0 +1,2139 @@
+<!DOCTYPE html>
+<head>
+   <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.css" />
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.3/leaflet.js"></script>
+
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+
+   <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+   <link rel="stylesheet" href="https://rawgit.com/lvoogdt/Leaflet.awesome-markers/2.0/develop/dist/leaflet.awesome-markers.css">
+   <script src="https://rawgithub.com/lvoogdt/Leaflet.awesome-markers/2.0/develop/dist/leaflet.awesome-markers.js"></script>
+
+
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.Default.css">
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/MarkerCluster.css">
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/leaflet.markercluster-src.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/0.4.0/leaflet.markercluster.js"></script>
+
+   <link rel="stylesheet" href="https://birdage.github.io/Leaflet.awesome-markers/dist/leaflet.awesome.rotate.css">
+
+   
+   
+   
+   
+
+   <style>
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      #map {
+        position:absolute;
+        top:0;
+        bottom:0;
+        right:0;
+        left:0;
+      }
+
+   </style>
+</head>
+
+<body>
+
+   <div class="folium-map" id="folium_f48a3d351bc441089c45aa7e27f7e244" style="width: 100%; height: 100%"></div>
+
+   <script>
+
+      
+
+      var base_tile = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 18,
+          minZoom: 1,
+          attribution: 'Map data (c) <a href="http://openstreetmap.org">OpenStreetMap</a> contributors'
+      });
+
+      var baseLayer = {
+        "Base Layer": base_tile
+      };
+
+      /*
+      addition of the wms layers
+      */
+
+      
+
+      /*
+      addition of the tile layers
+      */
+      
+
+      /*
+      list of layers to be added
+      */
+      var layer_list = {
+      
+      };
+
+      /*
+      Bounding box.
+      */
+      var southWest = L.latLng(-90, -180),
+          northEast = L.latLng(90, 180),
+          bounds = L.latLngBounds(southWest, northEast);
+
+      /*
+      Creates the map and adds the selected layers
+      */
+      var map = L.map('folium_f48a3d351bc441089c45aa7e27f7e244', {
+                                       center:[40.8417300874, -119.082400069],
+                                       zoom: 16,
+                                       maxBounds: bounds,
+                                       layers: [base_tile]
+                                     });
+
+      L.control.layers(baseLayer, layer_list).addTo(map);
+
+      //cluster group
+      var clusteredmarkers = L.markerClusterGroup();
+      //section for adding clustered markers
+      
+      //add the clustered markers to the group anyway
+      map.addLayer(clusteredmarkers);
+
+      
+
+      
+      var circle_1 = L.circle([40.84274, -119.0779], 10, {
+                            color: '#00FF00',
+                            fillColor: '#00FF00',
+                            fillOpacity: 0.6
+                            });
+      circle_1.bindPopup("Start -- Lat, Lon: 40.8427, -119.0779");
+      circle_1._popup.options.maxWidth = 300;
+      map.addLayer(circle_1)
+      
+      var circle_2 = L.circle([40.84072, -119.0869], 10, {
+                            color: '#FF0000',
+                            fillColor: '#FF0000',
+                            fillOpacity: 0.6
+                            });
+      circle_2.bindPopup("Target -- Lat, Lon: 40.8407, -119.0869");
+      circle_2._popup.options.maxWidth = 300;
+      map.addLayer(circle_2)
+      
+      var circle_3 = L.circle([40.84274, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_3)
+      
+      var circle_4 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_4)
+      
+      var circle_5 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_5)
+      
+      var circle_6 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_6)
+      
+      var circle_7 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_7)
+      
+      var circle_8 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_8)
+      
+      var circle_9 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_9)
+      
+      var circle_10 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_10)
+      
+      var circle_11 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_11)
+      
+      var circle_12 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_12)
+      
+      var circle_13 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_13)
+      
+      var circle_14 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_14)
+      
+      var circle_15 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_15)
+      
+      var circle_16 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_16)
+      
+      var circle_17 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_17)
+      
+      var circle_18 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_18)
+      
+      var circle_19 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_19)
+      
+      var circle_20 = L.circle([40.84275, -119.0779], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_20)
+      
+      var circle_21 = L.circle([40.84277, -119.0778], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_21)
+      
+      var circle_22 = L.circle([40.84944, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_22)
+      
+      var circle_23 = L.circle([40.84942, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_23)
+      
+      var circle_24 = L.circle([40.84944, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_24)
+      
+      var circle_25 = L.circle([40.84944, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_25)
+      
+      var circle_26 = L.circle([40.84944, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_26)
+      
+      var circle_27 = L.circle([40.84944, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_27)
+      
+      var circle_28 = L.circle([40.84943, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_28)
+      
+      var circle_29 = L.circle([40.84944, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_29)
+      
+      var circle_30 = L.circle([40.84943, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_30)
+      
+      var circle_31 = L.circle([40.84939, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_31)
+      
+      var circle_32 = L.circle([40.84939, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_32)
+      
+      var circle_33 = L.circle([40.84939, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_33)
+      
+      var circle_34 = L.circle([40.84945, -119.1229], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_34)
+      
+      var circle_35 = L.circle([40.84947, -119.1229], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_35)
+      
+      var circle_36 = L.circle([40.84944, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_36)
+      
+      var circle_37 = L.circle([40.84944, -119.1229], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_37)
+      
+      var circle_38 = L.circle([40.84943, -119.1229], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_38)
+      
+      var circle_39 = L.circle([40.84942, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_39)
+      
+      var circle_40 = L.circle([40.84943, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_40)
+      
+      var circle_41 = L.circle([40.84942, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_41)
+      
+      var circle_42 = L.circle([40.84944, -119.1229], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_42)
+      
+      var circle_43 = L.circle([40.84945, -119.1229], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_43)
+      
+      var circle_44 = L.circle([40.84944, -119.1229], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_44)
+      
+      var circle_45 = L.circle([40.84943, -119.1229], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_45)
+      
+      var circle_46 = L.circle([40.8494, -119.1229], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_46)
+      
+      var circle_47 = L.circle([40.84937, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_47)
+      
+      var circle_48 = L.circle([40.84936, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_48)
+      
+      var circle_49 = L.circle([40.84937, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_49)
+      
+      var circle_50 = L.circle([40.84937, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_50)
+      
+      var circle_51 = L.circle([40.84935, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_51)
+      
+      var circle_52 = L.circle([40.84935, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_52)
+      
+      var circle_53 = L.circle([40.8494, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_53)
+      
+      var circle_54 = L.circle([40.84939, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_54)
+      
+      var circle_55 = L.circle([40.84939, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_55)
+      
+      var circle_56 = L.circle([40.84939, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_56)
+      
+      var circle_57 = L.circle([40.84938, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_57)
+      
+      var circle_58 = L.circle([40.84939, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_58)
+      
+      var circle_59 = L.circle([40.84939, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_59)
+      
+      var circle_60 = L.circle([40.84939, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_60)
+      
+      var circle_61 = L.circle([40.84938, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_61)
+      
+      var circle_62 = L.circle([40.84938, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_62)
+      
+      var circle_63 = L.circle([40.84938, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_63)
+      
+      var circle_64 = L.circle([40.84938, -119.1227], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_64)
+      
+      var circle_65 = L.circle([40.84937, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_65)
+      
+      var circle_66 = L.circle([40.84937, -119.1228], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_66)
+      
+      var circle_67 = L.circle([40.83572, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_67)
+      
+      var circle_68 = L.circle([40.83572, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_68)
+      
+      var circle_69 = L.circle([40.83569, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_69)
+      
+      var circle_70 = L.circle([40.83568, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_70)
+      
+      var circle_71 = L.circle([40.83569, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_71)
+      
+      var circle_72 = L.circle([40.8357, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_72)
+      
+      var circle_73 = L.circle([40.8357, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_73)
+      
+      var circle_74 = L.circle([40.83569, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_74)
+      
+      var circle_75 = L.circle([40.83569, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_75)
+      
+      var circle_76 = L.circle([40.83569, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_76)
+      
+      var circle_77 = L.circle([40.83568, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_77)
+      
+      var circle_78 = L.circle([40.83567, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_78)
+      
+      var circle_79 = L.circle([40.83568, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_79)
+      
+      var circle_80 = L.circle([40.83568, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_80)
+      
+      var circle_81 = L.circle([40.8357, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_81)
+      
+      var circle_82 = L.circle([40.8357, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_82)
+      
+      var circle_83 = L.circle([40.8357, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_83)
+      
+      var circle_84 = L.circle([40.83558, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_84)
+      
+      var circle_85 = L.circle([40.83548, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_85)
+      
+      var circle_86 = L.circle([40.83554, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_86)
+      
+      var circle_87 = L.circle([40.83557, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_87)
+      
+      var circle_88 = L.circle([40.83558, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_88)
+      
+      var circle_89 = L.circle([40.83557, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_89)
+      
+      var circle_90 = L.circle([40.83557, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_90)
+      
+      var circle_91 = L.circle([40.83556, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_91)
+      
+      var circle_92 = L.circle([40.83554, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_92)
+      
+      var circle_93 = L.circle([40.83538, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_93)
+      
+      var circle_94 = L.circle([40.83498, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_94)
+      
+      var circle_95 = L.circle([40.835, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_95)
+      
+      var circle_96 = L.circle([40.83517, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_96)
+      
+      var circle_97 = L.circle([40.8356, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_97)
+      
+      var circle_98 = L.circle([40.83566, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_98)
+      
+      var circle_99 = L.circle([40.8357, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_99)
+      
+      var circle_100 = L.circle([40.83573, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_100)
+      
+      var circle_101 = L.circle([40.83576, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_101)
+      
+      var circle_102 = L.circle([40.83581, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_102)
+      
+      var circle_103 = L.circle([40.83583, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_103)
+      
+      var circle_104 = L.circle([40.83587, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_104)
+      
+      var circle_105 = L.circle([40.83593, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_105)
+      
+      var circle_106 = L.circle([40.83594, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_106)
+      
+      var circle_107 = L.circle([40.83598, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_107)
+      
+      var circle_108 = L.circle([40.83601, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_108)
+      
+      var circle_109 = L.circle([40.83607, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_109)
+      
+      var circle_110 = L.circle([40.83609, -119.0875], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_110)
+      
+      var circle_111 = L.circle([40.83614, -119.0875], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_111)
+      
+      var circle_112 = L.circle([40.83616, -119.0875], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_112)
+      
+      var circle_113 = L.circle([40.8362, -119.0875], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_113)
+      
+      var circle_114 = L.circle([40.83625, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_114)
+      
+      var circle_115 = L.circle([40.83629, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_115)
+      
+      var circle_116 = L.circle([40.83633, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_116)
+      
+      var circle_117 = L.circle([40.83634, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_117)
+      
+      var circle_118 = L.circle([40.8364, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_118)
+      
+      var circle_119 = L.circle([40.83643, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_119)
+      
+      var circle_120 = L.circle([40.83647, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_120)
+      
+      var circle_121 = L.circle([40.83648, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_121)
+      
+      var circle_122 = L.circle([40.83651, -119.0874], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_122)
+      
+      var circle_123 = L.circle([40.83652, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_123)
+      
+      var circle_124 = L.circle([40.83654, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_124)
+      
+      var circle_125 = L.circle([40.83661, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_125)
+      
+      var circle_126 = L.circle([40.83664, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_126)
+      
+      var circle_127 = L.circle([40.8367, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_127)
+      
+      var circle_128 = L.circle([40.83673, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_128)
+      
+      var circle_129 = L.circle([40.83675, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_129)
+      
+      var circle_130 = L.circle([40.83679, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_130)
+      
+      var circle_131 = L.circle([40.83679, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_131)
+      
+      var circle_132 = L.circle([40.83682, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_132)
+      
+      var circle_133 = L.circle([40.83686, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_133)
+      
+      var circle_134 = L.circle([40.83689, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_134)
+      
+      var circle_135 = L.circle([40.83693, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_135)
+      
+      var circle_136 = L.circle([40.83695, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_136)
+      
+      var circle_137 = L.circle([40.837, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_137)
+      
+      var circle_138 = L.circle([40.83703, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_138)
+      
+      var circle_139 = L.circle([40.83705, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_139)
+      
+      var circle_140 = L.circle([40.83709, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_140)
+      
+      var circle_141 = L.circle([40.83714, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_141)
+      
+      var circle_142 = L.circle([40.83718, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_142)
+      
+      var circle_143 = L.circle([40.83722, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_143)
+      
+      var circle_144 = L.circle([40.83725, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_144)
+      
+      var circle_145 = L.circle([40.83728, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_145)
+      
+      var circle_146 = L.circle([40.83734, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_146)
+      
+      var circle_147 = L.circle([40.83735, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_147)
+      
+      var circle_148 = L.circle([40.8374, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_148)
+      
+      var circle_149 = L.circle([40.83744, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_149)
+      
+      var circle_150 = L.circle([40.83747, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_150)
+      
+      var circle_151 = L.circle([40.83751, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_151)
+      
+      var circle_152 = L.circle([40.83758, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_152)
+      
+      var circle_153 = L.circle([40.83759, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_153)
+      
+      var circle_154 = L.circle([40.83766, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_154)
+      
+      var circle_155 = L.circle([40.83767, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_155)
+      
+      var circle_156 = L.circle([40.8377, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_156)
+      
+      var circle_157 = L.circle([40.83773, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_157)
+      
+      var circle_158 = L.circle([40.8378, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_158)
+      
+      var circle_159 = L.circle([40.83781, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_159)
+      
+      var circle_160 = L.circle([40.83786, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_160)
+      
+      var circle_161 = L.circle([40.83789, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_161)
+      
+      var circle_162 = L.circle([40.83791, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_162)
+      
+      var circle_163 = L.circle([40.83795, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_163)
+      
+      var circle_164 = L.circle([40.83799, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_164)
+      
+      var circle_165 = L.circle([40.83803, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_165)
+      
+      var circle_166 = L.circle([40.83807, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_166)
+      
+      var circle_167 = L.circle([40.83809, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_167)
+      
+      var circle_168 = L.circle([40.83812, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_168)
+      
+      var circle_169 = L.circle([40.83817, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_169)
+      
+      var circle_170 = L.circle([40.8382, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_170)
+      
+      var circle_171 = L.circle([40.83824, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_171)
+      
+      var circle_172 = L.circle([40.83825, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_172)
+      
+      var circle_173 = L.circle([40.83827, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_173)
+      
+      var circle_174 = L.circle([40.83829, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_174)
+      
+      var circle_175 = L.circle([40.83828, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_175)
+      
+      var circle_176 = L.circle([40.83835, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_176)
+      
+      var circle_177 = L.circle([40.83836, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_177)
+      
+      var circle_178 = L.circle([40.83843, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_178)
+      
+      var circle_179 = L.circle([40.83847, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_179)
+      
+      var circle_180 = L.circle([40.83848, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_180)
+      
+      var circle_181 = L.circle([40.83851, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_181)
+      
+      var circle_182 = L.circle([40.83855, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_182)
+      
+      var circle_183 = L.circle([40.83858, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_183)
+      
+      var circle_184 = L.circle([40.83862, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_184)
+      
+      var circle_185 = L.circle([40.83864, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_185)
+      
+      var circle_186 = L.circle([40.83868, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_186)
+      
+      var circle_187 = L.circle([40.8387, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_187)
+      
+      var circle_188 = L.circle([40.83874, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_188)
+      
+      var circle_189 = L.circle([40.83879, -119.0873], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_189)
+      
+      var circle_190 = L.circle([40.83882, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_190)
+      
+      var circle_191 = L.circle([40.83883, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_191)
+      
+      var circle_192 = L.circle([40.83889, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_192)
+      
+      var circle_193 = L.circle([40.83893, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_193)
+      
+      var circle_194 = L.circle([40.83894, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_194)
+      
+      var circle_195 = L.circle([40.83897, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_195)
+      
+      var circle_196 = L.circle([40.839, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_196)
+      
+      var circle_197 = L.circle([40.83904, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_197)
+      
+      var circle_198 = L.circle([40.83909, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_198)
+      
+      var circle_199 = L.circle([40.83912, -119.0872], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_199)
+      
+      var circle_200 = L.circle([40.83918, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_200)
+      
+      var circle_201 = L.circle([40.8392, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_201)
+      
+      var circle_202 = L.circle([40.83923, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_202)
+      
+      var circle_203 = L.circle([40.83928, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_203)
+      
+      var circle_204 = L.circle([40.83931, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_204)
+      
+      var circle_205 = L.circle([40.83935, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_205)
+      
+      var circle_206 = L.circle([40.8394, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_206)
+      
+      var circle_207 = L.circle([40.83942, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_207)
+      
+      var circle_208 = L.circle([40.83946, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_208)
+      
+      var circle_209 = L.circle([40.8395, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_209)
+      
+      var circle_210 = L.circle([40.83956, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_210)
+      
+      var circle_211 = L.circle([40.83958, -119.0871], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_211)
+      
+      var circle_212 = L.circle([40.83961, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_212)
+      
+      var circle_213 = L.circle([40.83964, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_213)
+      
+      var circle_214 = L.circle([40.83966, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_214)
+      
+      var circle_215 = L.circle([40.83968, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_215)
+      
+      var circle_216 = L.circle([40.83973, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_216)
+      
+      var circle_217 = L.circle([40.83979, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_217)
+      
+      var circle_218 = L.circle([40.83981, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_218)
+      
+      var circle_219 = L.circle([40.83985, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_219)
+      
+      var circle_220 = L.circle([40.83988, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_220)
+      
+      var circle_221 = L.circle([40.83992, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_221)
+      
+      var circle_222 = L.circle([40.83997, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_222)
+      
+      var circle_223 = L.circle([40.84001, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_223)
+      
+      var circle_224 = L.circle([40.84003, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_224)
+      
+      var circle_225 = L.circle([40.84007, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_225)
+      
+      var circle_226 = L.circle([40.8401, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_226)
+      
+      var circle_227 = L.circle([40.84014, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_227)
+      
+      var circle_228 = L.circle([40.84018, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_228)
+      
+      var circle_229 = L.circle([40.8402, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_229)
+      
+      var circle_230 = L.circle([40.84025, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_230)
+      
+      var circle_231 = L.circle([40.84027, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_231)
+      
+      var circle_232 = L.circle([40.8403, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_232)
+      
+      var circle_233 = L.circle([40.84037, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_233)
+      
+      var circle_234 = L.circle([40.84038, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_234)
+      
+      var circle_235 = L.circle([40.84044, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_235)
+      
+      var circle_236 = L.circle([40.84045, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_236)
+      
+      var circle_237 = L.circle([40.84049, -119.087], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_237)
+      
+      var circle_238 = L.circle([40.84055, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_238)
+      
+      var circle_239 = L.circle([40.84057, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_239)
+      
+      var circle_240 = L.circle([40.84059, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_240)
+      
+      var circle_241 = L.circle([40.84063, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_241)
+      
+      var circle_242 = L.circle([40.84066, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_242)
+      
+      var circle_243 = L.circle([40.84073, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_243)
+      
+      var circle_244 = L.circle([40.84077, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_244)
+      
+      var circle_245 = L.circle([40.84078, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_245)
+      
+      var circle_246 = L.circle([40.84081, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_246)
+      
+      var circle_247 = L.circle([40.84082, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_247)
+      
+      var circle_248 = L.circle([40.84083, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_248)
+      
+      var circle_249 = L.circle([40.84083, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_249)
+      
+      var circle_250 = L.circle([40.84078, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_250)
+      
+      var circle_251 = L.circle([40.84072, -119.0869], 1, {
+                            color: '#0000FF',
+                            fillColor: '#0000FF',
+                            fillOpacity: 0.6
+                            });
+      
+      map.addLayer(circle_251)
+      
+
+      
+
+      
+
+      
+
+      
+
+
+
+   </script>
+
+</body>

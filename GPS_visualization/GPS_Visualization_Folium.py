@@ -27,8 +27,12 @@
 #   * 09/12/15 - JEV - joshua.vaughan@louisiana.edu
 #       - conversion to Python 3
 #       - begin conversion away from Anaconda data
+#   * 09/16/15 - JEV - joshua.vaughan@louisiana.edu
+#       - Update parsing for ARLISS 2015 data log order
 #
 ##########################################################################################
+
+from __future__ import print_function, division
 
 import numpy as np
 
@@ -38,6 +42,8 @@ import tkinter as tk
 from tkinter.filedialog import askopenfilename, askdirectory
 
 import geographic_calculations as geoCalc
+
+import datetime
 
 
 PRODUCE_FOLIUMMAP = True         # Produce a Folium-based map?
@@ -50,7 +56,7 @@ def create_map(data_filename):
     waypoints = None
     # TODO: be more efficient
     with open(data_filename, 'rb') as data_file:  
-         data = np.genfromtxt(data_file, delimiter=',', skip_header = 1, dtype = 'float')
+         data = np.genfromtxt(data_file, delimiter=',', skip_header = 1)#, dtype = 'float')
 
     if np.shape(data)[1] == 14: # _controlHistory... file
         data_ok = True
@@ -99,6 +105,34 @@ def create_map(data_filename):
         gps_speed = data[:,18]
     
         waypoints = None
+    
+    if np.shape(data)[1] == 11: # pyBoard... file
+        # (timestamp, past point, current point, current bearing, desired bearing, angle, target distance)
+        data_ok = True
+        
+        hours = data[:,0]
+        minutes = data[:,1]
+        seconds = data[:,2]
+        
+        time = []
+        
+        for index, hour in enumerate(hours):
+            time_stamp = datetime.datetime(2015, 9, 16, int(hours[index]), int(minutes[index]), int(seconds[index]))
+            time = np.append(time, time_stamp.strftime('%H:%M:%S'))
+        
+        past_latitude = data[:,3]
+        past_longitude = data[:,4]
+        
+        # current
+        latitude = data[:,5]
+        longitude = data[:,6]
+        
+        current_bearing = data[:,7]
+        desired_bearing = data[:,8]
+        
+        angle_to_turn = data[:,9]
+        
+        target_distance = data[:,10]
         
     else:
         data_ok = False
@@ -107,7 +141,7 @@ def create_map(data_filename):
 
     if data_ok: # If we have meaningful data, make the map
         # Define the start, target, and midpoint locations
-        start = np.array([latitude[0], longitude[0]])
+        start = np.array([past_latitude[0], past_longitude[0]])
 
         if waypoints is not None:
             target = waypoints[-1,:]    # last waypoint is the target location
@@ -162,7 +196,7 @@ def create_map(data_filename):
             #  in a popup when clicked on
             for index, current_pos in enumerate(path):
                 mymap.circle_marker(location = [current_pos[0], current_pos[1]], radius = 1, 
-                                    popup = 'Time: {:3.2f} s -- Lat, Lon: {:4.4f}, {:4.4f} -- Speed: {:3.2f} m/s -- Actual Heading: {:3.0f} deg -- Desired Heading: {:3.0f} deg -- Distance to Waypoint: {:.0f} m'.format(time[index], latitude[index], longitude[index], gps_speed[index], imu_heading[index], bearing_to_waypoint[index], distance_to_waypoint[index]), 
+                                    #popup = 'Time: {} -- Lat, Lon: {:4.4f}, {:4.4f} -- Speed: {:3.2f} m/s -- Actual Heading: {:3.0f} deg -- Desired Heading: {:3.0f} deg -- Distance to Waypoint: {:.0f} m'.format(time[index], latitude[index], longitude[index], gps_speed[index], imu_heading[index], bearing_to_waypoint[index], distance_to_waypoint[index]), 
                                     line_color = '#0000FF', fill_color = '#0000FF')
 
 
