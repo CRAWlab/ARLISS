@@ -1,75 +1,121 @@
 #! /usr/bin/env python
 
-##############################################################################
-# BBB_GeneralMotorControl_Polulu.py
-#
-# Class-based, basic test of motor control using the Pololu High-power motor
-# driver
-#  https://www.pololu.com/product/755
-# 
-# Requires - Adafruit BeagleBone IO Python library
+###############################################################################
+# Requires - Pyboard pyb library
 #
 # NOTE: Any plotting is set up for output, not viewing on screen.
 #       So, it will likely be ugly on screen. The saved PDFs should look
 #       better.
 #
-# Created: 05/16/15
+# Created: 01/09/15
 #   - Joshua Vaughan
 #   - joshua.vaughan@louisiana.edu
 #   - http://www.ucs.louisiana.edu/~jev9637
 #
 # Modified:
-#   *
+#   * Forrest Montgomery -- converted into pyboard usable functions
+#   * I did not delete the original code it was just commented out.
+#   PWMA --- X8 (TIM14 CH1)
+#   DIRA --- Y9
+#   PWMB --- Y7 (TIM12 CH1)
+#   DIRB --- Y8
+#   V+   --- +12
+#   OUTA --- motor
+#   OUTB --- motor
+#   GND  --- GND
 #
-##############################################################################
+#   * Matthew Begneaud -- added functions outside of the class that 
+#                         simplify the commands necessary to provide
+#                         basic movement for the rover. (See below motor class)
+#                      -- more to be added...
+#                            ideas: - smooth accel/decel function
+# 
+#    * Forrest Montgomery -- August 28, 2016 
+#                         * modified to work with the pololu md07a
+#                          +---+                 +---+
+#                          |   |                 |   |
+#                          |   |                 |   |
+#                          |   |                 |   |
+#                          | B +-----------------+ A |
+#                          |   |                 |   |
+#                          |   |                 |   |
+#                          |   |                 |   |
+#                          +---+                 +---+
+
+#                       * Wired with correct polarity, the pololu 47:1 motors
+#                         will rotate clockwise.
+#                       * Motor A -- positive --> OUTA
+#                                 -- negative --> OUTB
+#
+#                       * Motor B -- positive --> OUTB
+#                                 -- negative --> OUTA
+###############################################################################
 
 from pyb import Pin, Timer
 import time
 import math
 
+############################## Motor Class ##############################
+
 class motor(object):
-    """ Convenience class for controlling a Polulu High-Power Motor Driver
+    """ Convenience class for controlling a motor
     Arguments
-      DIRPin : the DIR pin 
+      ControlPin1 : the x01 pin
+      ControlPin2 : the x02 pin
       PWMpin : the PWM pin
+      DIRpin : the DIR (standby) pin on the board
     Other atributes
       isRunning : Boolean describing if motor is running or not
       speed : current speed of the motor
-      direction : current direction the motor is running 
+      direction : current direction the motor is running
                   =None if the motor is not currently moving
     """
-    def __init__(self, DIRpin, PWMpin, PWMfreq = 2000):
-        self.DIRpin = DIRpin
+    def __init__(self, PWMpin, DIRpin, timer_id, channel_id):
         self.PWMpin = PWMpin
-        self.PWMfreq = PWMfreq
+        self.DIRpin = DIRpin
+        self.timer_id = timer_id
+        self.channel_id = channel_id
+
         self.isRunning = False
         self.currentDirection = None
         self.currentSpeed = 0
+
         # Set up the GPIO pins as output
-        GPIO.setup(self.DIRpin, GPIO.OUT)
+        PWMpin = Pin(self.PWMpin)
+        DIRpin = Pin(self.DIRpin, Pin.OUT_PP)
+
+        tim = Timer(self.timer_id, freq=1000)
+        ch = tim.channel(self.channel_id, Timer.PWM, pin=PWMpin)
 
 
     def start(self, speed, direction):
-        """ method to start a motor 
+        """ method to start a motor
         Arguments:
           speed : speed of the motor 0-100 (as percentage of max)
           direction : CW or CCW, for clockwise or counterclockwise
         """
-        # x01 and x02 have to be opposite to move, toggle to change direction
+
+        PWMpin = Pin(self.PWMpin)
+        DIRpin = Pin(self.DIRpin, Pin.OUT_PP)
+        # DIR1 and DIR2 have to be opposite to move, toggle to change direction
         if direction in ('cw','CW','clockwise'):
-            GPIO.output(self.DIRpin, GPIO.LOW)
+            DIRpin.high()
+
         elif direction in ('ccw','CCW','counterclockwise'):
-            GPIO.output(self.DIRpin, GPIO.HIGH)
+            DIRpin.low()
+
         else:
             raise ValueError('Please enter CW or CCW for direction.')
+
         # Start the motor
-        # PWM.start(channel, duty, freq=2000, polarity=0)
         if 0 <= speed <= 100:
-            PWM.start(self.PWMpin, speed, self.PWMfreq)
+            # self.PWMpin = Pin('X4')
+            tim = Timer(self.timer_id, freq=1000)
+            ch = tim.channel(self.channel_id, Timer.PWM, pin=PWMpin)
+            ch.pulse_width_percent(speed)
+            # PWM.start(self.PWMpin, speed)
         else:
-            raise ValueError("Please enter speed between 0 and 100, \
-                              representing a percentage of the maximum \
-                              motor speed.")
+            raise ValueError("Please enter speed between 0 and 100")
 
         # set the status attributes
         self.isRunning = True
@@ -77,12 +123,38 @@ class motor(object):
         self.currentSpeed = speed
 
     def stop(self):
+        """ redirects to a soft stop """
+        self.soft_stop()
+
+
+    def hard_stop(self):
         """ Method to hard stop an individual motor"""
-        PWM.set_duty_cycle(self.PWMpin, 0.0)
+
+        # self.PWMpin = Pin('X4')
+        # tim = Timer(2, freq=1000)
+        # ch = tim.channel(4, Timer.PWM, pin=self.PWMpin)
+        ch.pulse_width_percent(0)
+
         # set the status attributes
         self.isRunning = False
         self.currentDirection = None
         self.currentSpeed = 0
+
+
+    def soft_stop(self):
+        """ Method to soft stop (coast to stop) an individual motor"""
+        PWMpin = Pin(self.PWMpin)
+        tim = Timer(self.timer_id, freq=1000)
+        ch = tim.channel(self.channel_id, Timer.PWM, pin=PWMpin)
+        for i in range(self.currentSpeed):
+            ch.pulse_width_percent(self.currentSpeed-i)
+            time.sleep(0.01)
+        ch.pulse_width_percent(0)
+
+        # set the status attributes
+        self.isRunning = False
+        self.currentDirection = None
+        self.currentSpeed = 0.0
 
 
     def set_speed(self, newSpeed):
@@ -90,65 +162,55 @@ class motor(object):
         Arugments
           newSpeed : the desired new speed 0-100 (as percentage of max)
         """
-        PWM.set_duty_cycle(self.PWMpin, newSpeed)
+
+        PWMpin = Pin(self.PWMpin)
+        tim = Timer(self.timer_id, freq=1000)
+        ch = tim.channel(self.channel_id, Timer.PWM, pin=PWMpin)
+        ch.pulse_width_percent(newSpeed)
+        # PWM.set_duty_cycle(self.PWMpin, newSpeed)
         self.currentSpeed = newSpeed
 
+################################# Pin Setup #####################################
+
+DIRA = 'Y9'
+PWMA = 'X8'
+TIMA = 14
+CHANA = 1
+
+DIRB = 'Y8'
+PWMB = 'Y7'
+TIMB = 12
+CHANB = 1
+
+motorA = motor(PWMA, DIRA, TIMA, CHANA)
+motorB = motor(PWMB, DIRB, TIMB, CHANB)
 
 
-if __name__ == '__main__':
-    # Demonstrates the use of this class
-    # Set up the pins - These are mutable, but *don't* change them
-    DIR_PIN = 'P8_7'        # DIR pin on board, controls direction
-    PWM_PIN = 'P8_13'       # PWM pin on board,
-                            # controls the speed of the motor 
+######################## 2-Wheeled Rover Functions ###############################
 
-    # Create the motorA instance of the class
-    motorA = motor(DIR_PIN, PWM_PIN)
-    # We can check if it's running
-    if motorA.isRunning:
-        print 'Motor A is currently running.'
-    else:
-        print 'Motor A is not currently running.'
+'''The following functions utilize the functions created in the motor class
+and provide basic movement functions for the rover.
 
+All spin-directions for motors assume left wheel is motorA and right wheel is motorB 
+when looking at top of rover with front facing forward.'''
 
-    # Now, let's run it for 2s, off for 2s, on for 2s... for 5 times
-    # let's print that it's running each time too, using our inRunning attribute
-    for index in range(2):
-        motorA.start(100, 'CCW')
+def move_forward(speed):
+#Move both wheels at same speed in same direction to move forward
+    motorA.start(speed, 'CCW')
+    motorB.start(speed, 'CW')
 
-         # We can check if it's running
-        if motorA.isRunning:
-            print 'Motor A is spinning {} at {}% of maximum speed.'.format(
-                  motorA.currentDirection, motorA.currentSpeed)
+def move_backward(speed):
+#Move both wheels at same speed in same direction to move backward
+    motorA.start(speed, 'CW')
+    motorB.start(speed, 'CCW')
 
-        time.sleep(2)
+def speed_change(speed):
+    motorA.set_speed(speed)
 
-        print 'Stops are all hard stops. It effectively brakes.\n'
-        motorA.stop()
-        time.sleep(2)
-        motorA.start(100, 'CW')
-        time.sleep(2)
-
-        # We can check if it's running
-        if motorA.isRunning:
-            print 'Motor A is spinning {} at {}% of maximum speed.'.format(
-                  motorA.currentDirection, motorA.currentSpeed)
-        motorA.stop()
-        time.sleep(2)
-
-    # Let's vary the speed - we'll get fancy and use a sinusoidal variance
-    motorA.start(75,'CW')
-    lastTime = time.time()
-    startTime = time.time()
-
-    while time.time()-startTime < 30:
-        speed = 75 + 25 * math.sin(0.25 * 2 * math.pi * (
-                time.time()-startTime))
-        motorA.set_speed(speed)
-        if time.time() - lastTime > 1:
-            print('Motor A is spinning {} at {:>6.2f}% of
-                  maximum speed.'.format(motorA.currentDirection,
-                                         motorA.currentSpeed)
-            lastTime = time.time()
-        time.sleep(0.01)
+def stop():
     motorA.stop()
+    motorB.stop()
+            
+def hard_stop():
+    motorA.hard_stop()
+    motorB.hard_stop()
