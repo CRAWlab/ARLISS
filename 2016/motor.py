@@ -54,6 +54,24 @@
 from pyb import Pin, Timer
 import time
 import math
+# import pyboard_PID as pid
+
+################################# Encoder Setup ################################
+
+pin_a = pyb.Pin('X1', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE, af=pyb.Pin.AF1_TIM2)
+pin_b = pyb.Pin('X2', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE, af=pyb.Pin.AF1_TIM2)
+
+pin_c = pyb.Pin('X9', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE, af=pyb.Pin.AF2_TIM4)
+pin_d = pyb.Pin('X10', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE, af=pyb.Pin.AF2_TIM4)
+
+# The prescaler is ignored. When incrementing, the counter will count up-to
+# and including the period value, and then reset to 0.
+enc_timer = pyb.Timer(2, prescaler=0, period=65535)
+enc_timer_1 = pyb.Timer(4, prescaler=0, period=65535)
+# ENC_AB will increment/decrement on the rising edge of either the A channel or the B
+# channel.
+enc_channel = enc_timer.channel(1, pyb.Timer.ENC_AB)
+enc_channel_1 = enc_timer_1.channel(2, pyb.Timer.ENC_AB)
 
 ############################## Motor Class ##############################
 
@@ -121,6 +139,9 @@ class motor(object):
         self.isRunning = True
         self.currentDirection = direction
         self.currentSpeed = speed
+        while self.isRunning:
+            print("\nMotorA =", enc_timer.counter())
+            print("\nMotorB =", enc_timer_1.counter())
 
     def stop(self):
         """ redirects to a soft stop """
@@ -170,7 +191,7 @@ class motor(object):
         # PWM.set_duty_cycle(self.PWMpin, newSpeed)
         self.currentSpeed = newSpeed
 
-################################# Pin Setup #####################################
+################################# Pin Setup ####################################
 
 DIRA = 'Y9'
 PWMA = 'X8'
@@ -214,3 +235,12 @@ def stop():
 def hard_stop():
     motorA.hard_stop()
     motorB.hard_stop()
+
+def one_wheel_pid(init_speed, desired_speed):
+    motorA.start(speed, 'CCW')
+    kp = (2*np.pi)**2
+    ki = 135.0
+    kd = 10.0
+    pid = PID(kp, ki, kd, 0.001, 100, 0, 0.0)
+    pid.compute_output(desired_speed, motorA.currentSpeed)
+
