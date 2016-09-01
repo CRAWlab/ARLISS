@@ -42,6 +42,7 @@ from pyb import Pin, Timer
 import time
 import math
 import utime
+import pyboard_PID as pyPID
 
 class motor(object):
 
@@ -76,6 +77,8 @@ class motor(object):
         enc_channel = enc_timer.channel(1, pyb.Timer.ENC_AB)
         enc_channel_1 = enc_timer_1.channel(2, pyb.Timer.ENC_AB)
 
+        cts_list = []
+        cts_average = None
         while self.isRunning == True:
             init_encoder_1 = enc_timer.counter()
             start_time = utime.ticks_us()
@@ -84,11 +87,14 @@ class motor(object):
                     break
             init_encoder_1_later = enc_timer.counter()
             time_sum = utime.ticks_diff(start_time, utime.ticks_us())
-            encoder_sum = init_encoder_1 - init_encoder_1_later
-            print('cts:{}'.format((encoder_sum / time_sum)*1000000))
+            encoder_sum = init_encoder_1_later - init_encoder_1
+            cts = (encoder_sum / time_sum) * 100
+            cts_list.insert(0, cts)
+            if len(cts_list) == 10:
+                cts_average = sum(cts_list) / 10.0
+                return cts_average
+                cts_list.pop()
 
-    def print_this(self):
-        print(self)
 
     def start(self, speed, direction):
         PWM_py_pin = Pin(self.PWMpin)
@@ -130,11 +136,29 @@ class motor(object):
         self.currentDirection = None
         self.currentSpeed = 0.0
 
+    def change_speed(self,newspeed):
+        PWM_py_pin = Pin(self.PWMpin)
+        DIR_py_pin = Pin(self.DIRpin, Pin.OUT_PP)
+
+        tim = Timer(self.timer_id, freq=1000)
+        ch = tim.channel(self.channel_id, Timer.PWM, pin=PWM_py_pin)
+        ch.pulse_width_percent(newspeed)
+        self.currentSpeed = newspeed
+
+
 # Set up motorA
 DIRA = 'Y9'
 PWMA = 'X8'
 TIMA = 14
 CHANA = 1
 motorA = motor(PWMA, DIRA, TIMA, CHANA)
-begin = motorA.start(100,'cw')
-motorA.encoder_cps()
+motorA.start(30,'cw')
+# while True:
+    # motorA.encoder_cps()
+
+kp = (2*3.14)**2
+ki = 135.0
+kd = 10.0
+pid = pyPID.PID(kp, ki, kd, 0.001, 100, 0, 0)
+while True:
+    correction = pid.compute_output(1000, motorA.encoder_cps())
