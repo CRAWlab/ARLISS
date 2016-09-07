@@ -84,7 +84,7 @@ class PID(object):
 
     def compute_output(self, desired_state, current_state, current_time = None, previous_time = None):
         if current_time is None:
-            print('Current Time is None')
+            # print('Current Time is None')
             self.current_time = utime.ticks_us()
         else:
             self.current_time = current_time
@@ -92,8 +92,8 @@ class PID(object):
         if previous_time is not None:
             self.previous_time = previous_time
 
-        print('Current State: {}\t Desired State: {}'.format(current_state, desired_state))
-        print('Current Time: {}\t Previous Time: {}'.format(self.current_time, self.previous_time))
+        # print('Current State: {}\t Desired State: {}'.format(current_state, desired_state))
+        # print('Current Time: {}\t Previous Time: {}'.format(self.current_time, self.previous_time))
 
         if (self.current_time - self.previous_time >= self.dt):
             self.error = desired_state - current_state
@@ -110,7 +110,7 @@ class PID(object):
             self.state_change = current_state - self.last_state
             self.last_state = current_state
 
-            print('Error: {:}\t Error_dot: {:.4f}'.format(self.error, self.state_change))
+            # print('Error: {:}\t Error_dot: {:.4f}'.format(self.error, self.state_change))
 
             self.output = self.kp * self.error + self.ki * self.integral_term - self.kd * self.state_change
 
@@ -122,7 +122,8 @@ class PID(object):
 
             self.previous_time = self.current_time
 
-        print('PID output: {:}\n'.format(self.output))
+        # print('PID output: {:}\n'.format(self.output))
+        print('{},{},{}'.format(current_state, desired_state, self.output))
 
         return self.output
 

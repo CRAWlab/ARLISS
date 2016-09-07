@@ -79,21 +79,50 @@ class motor(object):
 
         cts_list = []
         cts_average = None
+        time_sum = 1
+        # rollover = 0
         while self.isRunning == True:
+            # enc_timer.callback(lambda t: rollover + 65535)
+            # print(rollover)
+            # print(enc_timer.counter())
             init_encoder_1 = enc_timer.counter()
             start_time = utime.ticks_us()
             while init_encoder_1 == enc_timer.counter():
                 if init_encoder_1 != enc_timer.counter():
+                    time_sum = utime.ticks_diff(start_time, utime.ticks_us())
                     break
             init_encoder_1_later = enc_timer.counter()
-            time_sum = utime.ticks_diff(start_time, utime.ticks_us())
             encoder_sum = init_encoder_1_later - init_encoder_1
-            cts = (encoder_sum / time_sum) * 100
-            cts_list.insert(0, cts)
-            if len(cts_list) == 10:
-                cts_average = sum(cts_list) / 10.0
-                return cts_average
-                cts_list.pop()
+            if encoder_sum != time_sum:
+                cts = (encoder_sum / time_sum) * 1000000
+                    # return cts
+                # print(cts)
+                cts_list.insert(0, cts)
+                if len(cts_list) == 100:
+                    # print(cts_list)
+                    cts_average = sum(cts_list) / 100.0
+                    # print(cts_average)
+                    cts_list.pop()
+                    return cts_average
+            #     print(cts_average)
+                # return cts_average
+                    # return cts_average
+            # start_time = utime.ticks_us()
+            # while init_encoder_1 == enc_timer.counter():
+            # if init_encoder_1 != enc_timer.counter():
+            #         break
+            # if init_encoder_1 != enc_timer.counter():
+                # init_encoder_1_later = enc_timer.counter()
+            #     time_sum = utime.ticks_diff(start_time, utime.ticks_us())
+            #     encoder_sum = init_encoder_1_later - init_encoder_1
+            #     # print(encoder_sum)
+            #     cts = (encoder_sum / time_sum) * 1000000
+            #     cts_list.insert(0, cts)
+            #     if len(cts_list) == 100:
+            #         cts_average = sum(cts_list) / 100.0
+            #         # print(cts_average)
+            #         cts_list.pop()
+            #         return cts_average
 
 
     def start(self, speed, direction):
@@ -144,6 +173,7 @@ class motor(object):
         ch = tim.channel(self.channel_id, Timer.PWM, pin=PWM_py_pin)
         ch.pulse_width_percent(newspeed)
         self.currentSpeed = newspeed
+        self.isRunning = True
 
 
 # Set up motorA
@@ -152,13 +182,18 @@ PWMA = 'X8'
 TIMA = 14
 CHANA = 1
 motorA = motor(PWMA, DIRA, TIMA, CHANA)
-motorA.start(30,'cw')
+motorA.start(20,'cw')
 # while True:
-    # motorA.encoder_cps()
+#     a = motorA.encoder_cps()
+#     print(a)
 
-kp = (2*3.14)**2
-ki = 135.0
-kd = 10.0
-pid = pyPID.PID(kp, ki, kd, 0.001, 100, 0, 0)
+kp = 2.1
+ki = 200.0
+kd = 0.00001
+pid = pyPID.PID(kp, ki, kd, 0.001, 8336, 492)
 while True:
-    correction = pid.compute_output(1000, motorA.encoder_cps())
+    correction = pid.compute_output(4000, motorA.encoder_cps())
+    conversion = (correction + 378.64) / 87.146
+    # print(conversion)
+    motorA.change_speed(conversion)
+    # print(conversion)
