@@ -104,7 +104,7 @@ class motor(object):
                     # print(cts_average)
                     cts_list.pop()
                     return cts_average
-            #     print(cts_average)
+                # print(cts_average)
                 # return cts_average
                     # return cts_average
             # start_time = utime.ticks_us()
@@ -187,13 +187,14 @@ motorA.start(20,'cw')
 #     a = motorA.encoder_cps()
 #     print(a)
 
-kp = 2.1
-ki = 200.0
-kd = 0.00001
-pid = pyPID.PID(kp, ki, kd, 0.001, 8336, 492)
+kp = 2
+ki = 0.00001
+kd = 1003
+pid = pyPID.PID(kp, ki, kd, 100000, 8336, 1000)
 while True:
-    correction = pid.compute_output(4000, motorA.encoder_cps())
+    correction = pid.compute_output(7000, motorA.encoder_cps())
     conversion = (correction + 378.64) / 87.146
     # print(conversion)
     motorA.change_speed(conversion)
     # print(conversion)
+    # time.sleep(0.1)
