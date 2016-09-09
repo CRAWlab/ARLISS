@@ -1,33 +1,68 @@
-# main.py -- put your code here!
-import pyb
-import stm
+from pyb import Pin, Timer
+import motor_class
+import utime
+import pyboard_PID as pyPID
 
-# This script sets up a timer to do quadrature decoding
-#
-# It was tested using a switch similar to https://www.sparkfun.com/products/9117
-# with some debounce wired up like this: https://hifiduino.files.wordpress.com/2010/10/analogdeb.jpg
-# Note: the debounce is only really required for mechanical switches. 
-#
-# I also tested this with one of these: http://www.lynxmotion.com/p-448-quadrature-motor-encoder-wcable.aspx
 
-pin_a = pyb.Pin('X1', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE, af=pyb.Pin.AF1_TIM2)
-pin_b = pyb.Pin('X2', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE, af=pyb.Pin.AF1_TIM2)
+# Set up motorA
+DIRA = 'Y9'
+PWMA = 'X8'
+TIMA = 14
+CHANA = 1
+motorA = motor_class.motor(PWMA, DIRA, TIMA, CHANA)
 
-pin_c = pyb.Pin('X9', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE, af=pyb.Pin.AF2_TIM4)
-pin_d = pyb.Pin('X10', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE, af=pyb.Pin.AF2_TIM4)
+# Set up encoder timers
+pin_a = pyb.Pin('X1', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
+                af=pyb.Pin.AF1_TIM2)
 
-# The prescaler is ignored. When incrementing, the counter will count up-to
-# and including the period value, and then reset to 0.
+pin_b = pyb.Pin('X2', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
+                af=pyb.Pin.AF1_TIM2)
+
+pin_c = pyb.Pin('X9', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
+                af=pyb.Pin.AF2_TIM4)
+
+pin_d = pyb.Pin('X10', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
+                af=pyb.Pin.AF2_TIM4)
+
 enc_timer = pyb.Timer(2, prescaler=0, period=65535)
 enc_timer_1 = pyb.Timer(4, prescaler=0, period=65535)
-# ENC_AB will increment/decrement on the rising edge of either the A channel or the B
-# channel.
+
 enc_channel = enc_timer.channel(1, pyb.Timer.ENC_AB)
 enc_channel_1 = enc_timer_1.channel(2, pyb.Timer.ENC_AB)
 
-while True:
+# Start the motor
+motorA.start(30,'cw')
+init = enc_timer.counter()
+total = 0
+another = 0
+# Get inital encoder reading
+def encoder(timer):
+    global init
+    global total
+    global another
+    current_encoder = enc_timer.counter() + (65535 * another)
+    total = (current_encoder - init)
+    init = current_encoder
+    # print(total)
+    # print(init)
 
-    print("\nCounter 1 =", enc_timer.counter());
-    pyb.delay(100)
-    print("\nCounter 2 =", enc_timer_1.counter());
-    pyb.delay(100)
+# This function allows the encoder to keep counting
+def plus(timer):
+    global another
+    another += 1
+
+tim_call = pyb.Timer(12, freq=10)
+tim_call.callback(encoder)
+
+enc_timer.callback(plus)
+
+kp = 0.47511306
+ki = 0
+kd = 0
+pid = pyPID.PID(kp, ki, kd, 100000, 105, 568)
+while True:
+    correction = pid.compute_output(500, total)
+    conversion = (correction + 10.75) / 5.7875
+    print(conversion)
+    motorA.change_speed(conversion)
+    # print(correction)
