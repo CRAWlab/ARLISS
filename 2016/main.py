@@ -31,22 +31,23 @@ enc_channel = enc_timer.channel(1, pyb.Timer.ENC_AB)
 enc_channel_1 = enc_timer_1.channel(2, pyb.Timer.ENC_AB)
 
 # Start the motor
-motorA.start(30,'cw')
+motorA.start(20,'cw')
 init = enc_timer.counter()
 total = 0
 another = 0
+correction = 0
+pid = 0
 # Get inital encoder reading
 def encoder(timer):
     global init
     global total
-    global another
+    global correction
     current_encoder = enc_timer.counter() + (65535 * another)
     total = (current_encoder - init)
     init = current_encoder
     # print(total)
     # print(init)
 
-# This function allows the encoder to keep counting
 def plus(timer):
     global another
     another += 1
@@ -56,13 +57,14 @@ tim_call.callback(encoder)
 
 enc_timer.callback(plus)
 
-kp = 0.47511306
-ki = 0
-kd = 0
-pid = pyPID.PID(kp, ki, kd, 100000, 105, 568)
+kp = 1
+ki = 0.0000001
+kd = 0.01
+pid = pyPID.PID(kp, ki, kd, 100000, 568, 44)
 while True:
-    correction = pid.compute_output(500, total)
-    conversion = (correction + 10.75) / 5.7875
-    print(conversion)
+    correction = pid.compute_output(400, total)
+    conversion = (correction + 14.222) / 5.8222
+    # print(conversion)
     motorA.change_speed(conversion)
+    # utime.sleep(0.01)
     # print(correction)

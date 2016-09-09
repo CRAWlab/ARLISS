@@ -112,17 +112,20 @@ class PID(object):
 
             # print('Error: {:}\t Error_dot: {:.4f}'.format(self.error, self.state_change))
 
-            self.output = self.kp * self.error + self.ki * self.integral_term - self.kd * self.state_change
+            self.output = self.kp * self.error + self.integral_term - self.kd * self.state_change
 
             # limit the output to within the range of possible values
             if self.output > self.max_output:
                 self.output = self.max_output
+                # print('Limiting PID ouput to maximum')
             elif self.output < self.min_output:
+                # print('Limiting PID output to minimum')
                 self.output = self.min_output
 
             self.previous_time = self.current_time
 
+
         # print('PID output: {:}\n'.format(self.output))
-        print('{},{},{},{}'.format(current_state, desired_state, self.output, self.current_time))
+        print('{},{}\n'.format(current_state, self.output))
 
         return self.output
