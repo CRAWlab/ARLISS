@@ -58,7 +58,7 @@ launch_point = (40.849421, -119.122892)
 backup_timer = 5400000
 altitude_concurrent_timer = 3600000
 acceptable_dist_from_launch = 1000
-acceptatble_altitude_change = 25
+acceptable_altitude_change = 25
 
 # Global Flag to start GPS data Processing
 new_data = False

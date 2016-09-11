@@ -6,33 +6,16 @@
 '''
 Description   :
 This is a modification of Dr Vaughan's pololu high voltage motor driver code.
-The pin assignments are:
-PWMA --- X8 (TIM14 CH1)
-DIRA --- Y9
-PWMB --- Y7 (TIM12 CH1)
-DIRB --- Y8
-V+   --- +12
-OUTA --- motor
-OUTB --- motor
-GND  --- GND
 
                           +---+                 +---+
                           |   |                 |   |
                           |   |                 |   |
                           |   |                 |   |
-                          | B +-----------------+ A |
-                          |   |                 |   |
-                          |   |                 |   |
+                          | A +-----|----|------+ B |
+                          |   |     |    |      |   |
+                          |   |     |    |      |   |
                           |   |                 |   |
                           +---+                 +---+
-
-                       * Wired with correct polarity, the pololu 47:1 motors
-                         will rotate clockwise.
-                       * Motor A -- positive --> OUTA
-                                 -- negative --> OUTB
-
-                       * Motor B -- positive --> OUTB
-                                 -- negative --> OUTA
 
 '''
 # Modified    :
@@ -56,84 +39,6 @@ class motor(object):
         self.isRunning = False
         self.currentDirection = None
         self.currentSpeed = 0
-
-    # def encoder_cps(self):
-    #     # TODO find a way to get encoder data from individual motors
-    #
-    #     pin_a = pyb.Pin('X1', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
-    #                     af=pyb.Pin.AF1_TIM2)
-    #
-    #     pin_b = pyb.Pin('X2', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
-    #                     af=pyb.Pin.AF1_TIM2)
-    #
-    #     pin_c = pyb.Pin('X9', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
-    #                     af=pyb.Pin.AF2_TIM4)
-    #
-    #     pin_d = pyb.Pin('X10', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
-    #                     af=pyb.Pin.AF2_TIM4)
-    #
-    #     enc_timer = pyb.Timer(2, prescaler=0, period=65535)
-    #     enc_timer_1 = pyb.Timer(4, prescaler=0, period=65535)
-    #
-    #     enc_channel = enc_timer.channel(1, pyb.Timer.ENC_AB)
-    #     enc_channel_1 = enc_timer_1.channel(2, pyb.Timer.ENC_AB)
-    #
-    #     cts_list = []
-    #     cts_average = None
-    #     time_sum = 1
-    #     encoder_last = 0
-    #     time_last = 0
-    #     tim = pyb.Timer()
-        # rollover = 0
-        # while self.isRunning == True:
-            # enc_timer.callback(lambda t: rollover + 65535)
-            # print(rollover)
-            # print(enc_timer.counter())
-            # current_encoder = enc_timer.counter()
-            # current_time = utime.ticks_us()
-            # cps = 1000000 * ((current_encoder - encoder_last) / (
-            #       utime.ticks_diff(current_time, utime.ticks_us())))
-            # encoder_last = current_encoder
-            # print('{},{},{},{}'.format(current_encoder,current_time,cps,encoder_last))
-            # time_last = current_time
-            # print(cps)
-            # while init_encoder_1 == enc_timer.counter():
-            #     if init_encoder_1 != enc_timer.counter():
-            #         time_sum = utime.ticks_diff(start_time, utime.ticks_us())
-            #         break
-            # init_encoder_1_later = enc_timer.counter()
-            # encoder_sum = init_encoder_1_later - init_encoder_1
-            # if encoder_sum != time_sum:
-                # cts = (encoder_sum / time_sum) * 1000000
-                    # return cts
-                # print(cts)
-                # cts_list.insert(0, cts)
-                # if len(cts_list) == 100:
-                    # print(cts_list)
-                    # cts_average = sum(cts_list) / 100.0
-                    # print(cts_average)
-                    # cts_list.pop()
-                    # return cts_average
-                # print(cts_average)
-                # return cts_average
-                    # return cts_average
-            # start_time = utime.ticks_us()
-            # while init_encoder_1 == enc_timer.counter():
-            # if init_encoder_1 != enc_timer.counter():
-            #         break
-            # if init_encoder_1 != enc_timer.counter():
-                # init_encoder_1_later = enc_timer.counter()
-            #     time_sum = utime.ticks_diff(start_time, utime.ticks_us())
-            #     encoder_sum = init_encoder_1_later - init_encoder_1
-            #     # print(encoder_sum)
-            #     cts = (encoder_sum / time_sum) * 1000000
-            #     cts_list.insert(0, cts)
-            #     if len(cts_list) == 100:
-            #         cts_average = sum(cts_list) / 100.0
-            #         # print(cts_average)
-            #         cts_list.pop()
-            #         return cts_average
-
 
     def start(self, speed, direction):
         PWM_py_pin = Pin(self.PWMpin)
@@ -185,50 +90,93 @@ class motor(object):
         self.currentSpeed = newspeed
         self.isRunning = True
 
+    def calculate_bearing(position1, position2):
+        ''' Calculate the bearing between two GPS coordinates
+        Equations from: http://www.movable-type.co.uk/scripts/latlong.html
+        Input arguments:
+            position1 = lat/long pair in decimal degrees DD.dddddd
+            position2 = lat/long pair in decimal degrees DD.dddddd
+        Returns:
+            bearing = initial bearing from position 1 to position 2 in degrees
+        Created: Joshua Vaughan - joshua.vaughan@louisiana.edu - 04/23/14
+        Modified:
+            *
+        '''
+        print(position1[0])
+        lat1 = math.radians(position1[0])
+        long1 = math.radians(position1[1])
+        lat2 = math.radians(position2[0])
+        long2 = math.radians(position2[1])
 
-# Set up motorA
-# DIRA = 'Y9'
-# PWMA = 'X8'
-# TIMA = 14
-# CHANA = 1
-# motorA = motor(PWMA, DIRA, TIMA, CHANA)
-# motorA.start(20,'cw')
-#
-# # Set up timers for encoders
-# pin_a = pyb.Pin('X1', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
-#                 af=pyb.Pin.AF1_TIM2)
-#
-# pin_b = pyb.Pin('X2', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
-#                 af=pyb.Pin.AF1_TIM2)
-#
-# pin_c = pyb.Pin('X9', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
-#                 af=pyb.Pin.AF2_TIM4)
-#
-# pin_d = pyb.Pin('X10', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE,
-#                 af=pyb.Pin.AF2_TIM4)
-#
-# enc_timer = pyb.Timer(2, prescaler=0, period=65535)
-# enc_timer_1 = pyb.Timer(4, prescaler=0, period=65535)
-#
-# enc_channel = enc_timer.channel(1, pyb.Timer.ENC_AB)
-# enc_channel_1 = enc_timer_1.channel(2, pyb.Timer.ENC_AB)
-#
-# # Set up timers for encoder callback
-# tim_call = pyb.Timer(12, freq=1000)
-# tim_call.callback(encoder)
-#
-# while True:
-#     a = motorA.encoder_cps()
-#     print(a)
+        dLon = long2 - long1
 
-# kp = 2
-# ki = 0.00001
-# kd = 1003
-# pid = pyPID.PID(kp, ki, kd, 100000, 8336, 1000)
-# while True:
-#     correction = pid.compute_output(7000, motorA.encoder_cps())
-#     conversion = (correction + 378.64) / 87.146
-#     # print(conversion)
-#     motorA.change_speed(conversion)
-    # print(conversion)
-    # time.sleep(0.1)
+        y = math.sin(dLon) * math.cos(lat2)
+        x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dLon)
+
+        bearing = (math.degrees(math.atan2(y, x)) + 360) % 360
+
+        return bearing
+
+
+    def calculate_distance(position1, position2):
+        ''' Calculate the distance between two lat/long coords using simple
+            cartesian math
+
+        Equation from: http://www.movable-type.co.uk/scripts/latlong.html
+
+        Input arguments:
+            position1 = lat/long pair in decimal degrees DD.dddddd
+            position2 = lat/long pair in decimal degrees DD.dddddd
+
+        Returns:
+            distance = distance from position 1 to position 2 in meters
+
+
+        Created: Joshua Vaughan - joshua.vaughan@louisiana.edu - 04/24/14
+
+        Modified:
+            * Forrest Montgomery -- the micropython board did not like the radians
+            conversion turned into a tuple. So I separated all the lats and longs.
+        '''
+
+        R = 6373000        # Radius of the earth in m
+
+        lat1, long1 = position1
+        lat2, long2 = position2
+        lat1 = math.radians(lat1)
+        long1 = math.radians(long1)
+        lat2 = math.radians(lat2)
+        long2 = math.radians(long2)
+
+        dLat = lat2 - lat1
+        dLon = long2 - long1
+
+        x = dLon * math.cos((lat1+lat2)/2)
+        distance = math.sqrt(x**2 + dLat**2) * R
+
+        return distance
+
+
+    # converting functions from Dr. Vaughan
+    def convert_longitude(long_EW):
+        """ Function to convert deg m E/W longitude to DD.dddd (decimal degrees)
+        Arguments:
+          long_EW : tuple representing longitude
+                    in format of MicroGPS gps.longitude
+        Returns:
+          float representing longtidue in DD.dddd
+        """
+
+        return (long_EW[0] + long_EW[1] / 60) * (1.0 if long_EW[2] == 'E' else -1.0)
+
+
+    def convert_latitude(lat_NS):
+        """ Function to convert deg m N/S latitude to DD.dddd (decimal degrees)
+        Arguments:
+          lat_NS : tuple representing latitude
+                    in format of MicroGPS gps.latitude
+        Returns:
+          float representing latitidue in DD.dddd
+        """
+
+        return (lat_NS[0] + lat_NS[1] / 60) * (1.0 if lat_NS[2] == 'N' else -1.0)
