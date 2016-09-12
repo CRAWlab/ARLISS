@@ -108,7 +108,7 @@ def bearing_difference(past, present):
         then determines how far to turn the right wheel to correct for the
         error.
         """
-        finish_point = (40.86339, -119.1344)
+        finish_point = (30.210181, -92.021280)
         current_heading = calculate_bearing(past, present)
         desired_heading = calculate_bearing(present, finish_point)
         course_error = desired_heading - current_heading
@@ -129,6 +129,15 @@ def bearing_difference(past, present):
 my_gps = MicropyGPS()
 
 gps_uart = UART(6, 9600)
+xbee_uart = UART(2, 9600)
+
+while gps_uart.any() >= 0:
+    my_gps.update(chr(gps_uart.readchar()))
+    print('No GPS signal!!!\n')
+    xbee_uart.write('No GPS signal!!!\n')
+    print(my_gps.latitude)
+    if my_gps.latitude[0] != 0:
+        break
 
 # Set up motorA
 DIRA = 'X7'
@@ -163,17 +172,13 @@ enc_timer_B = pyb.Timer(4, prescaler=0, period=65535)
 enc_channel_A = enc_timer_A.channel(1, pyb.Timer.ENC_AB)
 enc_channel_B = enc_timer_B.channel(2, pyb.Timer.ENC_AB)
 
-while uart.any():
-    my_gps.update(chr(uart.readchar()))
-    if my_gps.latitude[0] != 0:
-        break
-
 init_lat = convert_latitude(my_gps.latitude)
 init_long = convert_longitude(my_gps.longitude)
 init_point = (init_lat, init_long)
 
 # Start motorA
 # motorA.start(30,'cw')
+xbee_uart.write('MotorA started!\n')
 init_A = enc_timer_A.counter()
 total_A = 0
 another_A = 0
@@ -182,6 +187,7 @@ pid_A = 0
 
 # Start motorB
 # motorB.start(30,'ccw')
+xbee_uart.write('MotorB started!\n')
 init_B = enc_timer_B.counter()
 total_B = 0
 another_B = 0
@@ -218,6 +224,28 @@ def plus_B(timer):
     global another_B
     another_B += 1
 
+new_PID_speed = 0
+def GPS_bearing(timer):
+    global initial_point
+    my_gps.update(chr(gps_uart.readchar()))
+    pres_lat = convert_latitude(my_gps.latitude)
+    pres_long = convert_longitude(my_gps.longitude)
+    pres_point = (pres_lat, pres_long)
+    direction_tuple = bearing_difference(initial_point, pres_point)
+    angle = direction_tuple[0]
+    turn = direction_tuple[1]
+    if turn == 1:
+        xbee_uart.write('Turn Right\n')
+        new_PID_speed = 150
+    elif turn == -1:
+        xbee_uart.write('Turn Left\n')
+        new_PID_speed = 250
+    else:
+        new_PID_speed == 200
+        xbee_uart.write('Stay Straight\n')
+    initial_point = pres_point
+    return new_PID_speed
+
 # Callbacks for the plus 65535 functions
 enc_timer_A.callback(plus_A)
 enc_timer_B.callback(plus_B)
@@ -233,27 +261,6 @@ tim_call_B.callback(encoder_B)
 # Callback for GPS
 GPS_PID_call = pyb.Timer(11, freq=0.5)
 GPS_PID_call.callback(GPS_bearing)
-
-
-new_PID_speed = 0
-def GPS_bearing(timer):
-    global initial_point
-    my_gps.update(chr(uart.readchar()))
-    pres_lat = convert_latitude(my_gps.latitude)
-    pres_long = convert_longitude(my_gps.longitude)
-    pres_point = (pres_lat, pres_long)
-    direction_tuple = bearing_difference(initial_point, pres_point)
-    angle = direction_tuple[0]
-    turn = direction_tuple[1]
-    if turn == 1:
-        new_PID_speed = 150
-    elif turn == -1:
-        new_PID_speed = 250
-    else:
-        new_PID_speed == 200
-    initial_point = pres_point
-    return new_PID_speed
-
 
 kp = 1
 ki = 0.0000001

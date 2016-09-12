@@ -126,6 +126,6 @@ class PID(object):
 
 
         # print('PID output: {:}\n'.format(self.output))
-        print('{},{}\n'.format(current_state, self.output))
+        # print('{},{}\n'.format(current_state, self.output))
 
         return self.output
