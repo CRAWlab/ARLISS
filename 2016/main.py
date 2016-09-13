@@ -131,6 +131,26 @@ my_gps = MicropyGPS()
 gps_uart = UART(6, 9600)
 xbee_uart = UART(2, 9600)
 
+# Parachute 
+utime.sleep(2)
+parachute = Pin('X6', Pin.OUT_PP)
+parachute.high()
+utime.sleep(2)
+parachute.low()
+
+# Buzzer
+buzzer = Pin('Y12')
+tim = Timer(8, freq=1000)
+ch = tim.channel(3, Timer.PWM, pin=buzzer)
+utime.sleep(2)
+ch.pulse_width_percent(50)
+utime.sleep(2)
+ch.pulse_width_percent(40)
+utime.sleep(2)
+ch.pulse_width_percent(30)
+utime.sleep(2)
+ch.pulse_width_percent(0)
+
 while gps_uart.any() >= 0:
     my_gps.update(chr(gps_uart.readchar()))
     print('No GPS signal!!!\n')
