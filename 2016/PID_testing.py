@@ -1,6 +1,6 @@
 from pyb import Pin, Timer, UART
 import motor_class
-import utime
+import utime, math
 import pyboard_PID as pyPID
 from micropyGPS import MicropyGPS
 
@@ -127,7 +127,7 @@ def bearing_difference(past, present):
 
 my_gps = MicropyGPS()
 
-gps_uart = UART(6, 9600)
+gps_uart = UART(6, 9600, read_buf_len=1000)
 xbee_uart = UART(2, 9600)
 
 # Countdown Timer
@@ -137,17 +137,14 @@ backup_timer = 5400000
 while gps_uart.any() >= 0:
     my_gps.update(chr(gps_uart.readchar()))
     print('No GPS signal!!!\n')
-    # with open('/sd/log.csv', 'a') as log:
-    #         log.write('This logging works!\n')
-    # xbee_uart.write('No GPS signal!!!\n')
     print(my_gps.latitude)
     if my_gps.latitude[0] != 0:
         init_lat = convert_latitude(my_gps.latitude)
         init_long = convert_longitude(my_gps.longitude)
         initial_point = (init_lat, init_long)
-        # with open('/sd/log.csv', 'a') as log:
-            # log.write('\n\n-----------------------------\n\nInitial Point: {}'.format(init_point))
     break
+
+initial_point = (40.870242, -119.106354)
 
 # while True:
 #     print('not landed yet')
@@ -161,17 +158,17 @@ utime.sleep(2)
 parachute.low()
 
 # Buzzer
-buzzer = Pin('Y12')
-tim = Timer(8, freq=1000)
-ch = tim.channel(3, Timer.PWM, pin=buzzer)
-ch.pulse_width_percent(90)
-utime.sleep(0.5)
-ch.pulse_width_percent(0)
-utime.sleep(0.5)
-ch.pulse_width_percent(90)
-utime.sleep(0.5)
-ch.pulse_width_percent(0)
-utime.sleep(0.5)
+# buzzer = Pin('Y12')
+# tim = Timer(8, freq=1000)
+# ch = tim.channel(3, Timer.PWM, pin=buzzer)
+# ch.pulse_width_percent(90)
+# utime.sleep(0.5)
+# ch.pulse_width_percent(0)
+# utime.sleep(0.5)
+# ch.pulse_width_percent(90)
+# utime.sleep(0.5)
+# ch.pulse_width_percent(0)
+# utime.sleep(0.5)
 
 # Set up motorA
 DIRA = 'X7'
@@ -224,7 +221,7 @@ pid_B = 0
 
 GPS_addition = 0
 new_PID_speed = 300
-# # Get inital encoderA reading every 0.1s
+# Get inital encoderA reading every 0.1s
 def encoder_A(timer):
     global init_A
     global total_A
@@ -232,40 +229,42 @@ def encoder_A(timer):
     global GPS_addition
     global new_PID_speed
     global initial_point
+    global my_gps
     current_encoder = enc_timer_A.counter() + (65535 * another_A)
     total_A = (current_encoder - init_A)
     init_A = current_encoder
     GPS_addition = 1 + GPS_addition
     print(GPS_addition)
-    if GPS_addition >= 10:
-        print('In the GPS function')
-        # global new_PID_speed
-        # global initial_point
-        while gps_uart.any() >= 0:
-            my_gps.update(chr(gps_uart.readchar()))
-        pres_lat = convert_latitude(my_gps.latitude)
-        pres_long = convert_longitude(my_gps.longitude)
-        pres_point = (pres_lat, pres_long)
-        print(pres_point)
-        # with open('/sd/log.csv', 'a') as log:
-            # log.write('\n\n-----------------------------\n\nPresent Point: {}'.format(pres_point))
-        direction_tuple = bearing_difference(initial_point, pres_point)
-        angle = direction_tuple[0]
-        turn = direction_tuple[1]
-        if turn == 1:
-            print('Turn Right\n')
-            new_PID_speed = 150
-        elif turn == -1:
-            print('Turn Left\n')
-            new_PID_speed = 400
-        else:
-            new_PID_speed == 200
-            print('Stay Straight\n')
-        initial_point = pres_point
-        GPS_addition = 0
-    print(total_A)
+    # if GPS_addition >= 10:
+    #     print('In the GPS function')
+    #     # global new_PID_speed
+    #     # global initial_point
+    #     while gps_uart.any() >= 0:
+    #         my_gps.update(chr(gps_uart.readchar()))
+    #     print(my_gps.latitude)
+    #     pres_lat = convert_latitude(my_gps.latitude)
+    #     pres_long = convert_longitude(my_gps.longitude)
+    #     pres_point = (pres_lat, pres_long)
+    #     print(pres_point)
+    #     # with open('/sd/log.csv', 'a') as log:
+    #         # log.write('\n\n-----------------------------\n\nPresent Point: {}'.format(pres_point))
+    #     direction_tuple = bearing_difference(initial_point, pres_point)
+    #     angle = direction_tuple[0]
+    #     turn = direction_tuple[1]
+    #     if turn == 1:
+    #         print('Turn Right\n')
+    #         new_PID_speed = 150
+    #     elif turn == -1:
+    #         print('Turn Left\n')
+    #         new_PID_speed = 400
+    #     else:
+    #         new_PID_speed == 200
+    #         print('Stay Straight\n')
+    #     initial_point = pres_point
+    #     GPS_addition = 0
+    # print(total_A)
 
-# # Add 65535 everytime the encoder is called so it never goes to zero
+# Add 65535 everytime the encoder is called so it never goes to zero
 def plus_A(timer):
     global another_A
     another_A += 1
@@ -287,30 +286,29 @@ def plus_B(timer):
 
 
 # def GPS_bearing():
-#     print('In the GPS function')
-#     global new_PID_speed
-#     global initial_point
-#     my_gps.update(chr(gps_uart.readchar()))
-#     pres_lat = convert_latitude(my_gps.latitude)
-#     pres_long = convert_longitude(my_gps.longitude)
-#     pres_point = (pres_lat, pres_long)
-#     # with open('/sd/log.csv', 'a') as log:
-#         # log.write('\n\n-----------------------------\n\nPresent Point: {}'.format(pres_point))
-#     direction_tuple = bearing_difference(initial_point, pres_point)
-#     angle = direction_tuple[0]
-#     turn = direction_tuple[1]
-#     if turn == 1:
-#         print('Turn Right\n')
-#         new_PID_speed = 150
-#     elif turn == -1:
-#         print('Turn Left\n')
-#         new_PID_speed = 400
-#     else:
-#         new_PID_speed == 200
-#         print('Stay Straight\n')
-#     initial_point = pres_point
-#     GPS_addition = 0
-#     return new_PID_speed
+    print('In the GPS function')
+    global new_PID_speed
+    global initial_point
+    global my_gps
+    my_gps.update(chr(gps_uart.readchar()))
+    pres_lat = convert_latitude(my_gps.latitude)
+    pres_long = convert_longitude(my_gps.longitude)
+    pres_point = (pres_lat, pres_long)
+    direction_tuple = bearing_difference(initial_point, pres_point)
+    angle = direction_tuple[0]
+    turn = direction_tuple[1]
+    if turn == 1:
+        print('Turn Right\n')
+        new_PID_speed = 150
+    elif turn == -1:
+        print('Turn Left\n')
+        new_PID_speed = 400
+    else:
+        new_PID_speed == 200
+        print('Stay Straight\n')
+    initial_point = pres_point
+    GPS_addition = 0
+    return new_PID_speed
 
 # Callbacks for the plus 65535 functions
 enc_timer_A.callback(plus_A)
