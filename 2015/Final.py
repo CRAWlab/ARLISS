@@ -276,7 +276,7 @@ while True:
             xbee.write('\nCurrent point: {}'.format(initial_point))
             dist_from_launch = calculate_distance(launch_point, initial_point)
             xbee.write('\nDistance from launch: {}'.format(dist_from_launch))
-            #acceptable distance is currently set for simple testing
+            # acceptable distance is currently set for simple testing
             if dist_from_launch < acceptable_dist_from_launch:
                 # pyb.stop()
                 pyb.delay(100)

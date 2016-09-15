@@ -132,32 +132,32 @@ gps_uart = UART(6, 9600)
 xbee_uart = UART(2, 9600)
 
 # Parachute 
-utime.sleep(2)
-parachute = Pin('X6', Pin.OUT_PP)
-parachute.high()
-utime.sleep(2)
-parachute.low()
+# utime.sleep(2)
+# parachute = Pin('X6', Pin.OUT_PP)
+# parachute.high()
+# utime.sleep(2)
+# parachute.low()
 
 # Buzzer
-buzzer = Pin('Y12')
-tim = Timer(8, freq=1000)
-ch = tim.channel(3, Timer.PWM, pin=buzzer)
-utime.sleep(2)
-ch.pulse_width_percent(50)
-utime.sleep(2)
-ch.pulse_width_percent(40)
-utime.sleep(2)
-ch.pulse_width_percent(30)
-utime.sleep(2)
-ch.pulse_width_percent(0)
+# buzzer = Pin('Y12')
+# tim = Timer(8, freq=1000)
+# ch = tim.channel(3, Timer.PWM, pin=buzzer)
+# utime.sleep(2)
+# ch.pulse_width_percent(50)
+# utime.sleep(2)
+# ch.pulse_width_percent(40)
+# utime.sleep(2)
+# ch.pulse_width_percent(30)
+# utime.sleep(2)
+# ch.pulse_width_percent(0)
 
-while gps_uart.any() >= 0:
-    my_gps.update(chr(gps_uart.readchar()))
-    print('No GPS signal!!!\n')
-    xbee_uart.write('No GPS signal!!!\n')
-    print(my_gps.latitude)
-    if my_gps.latitude[0] != 0:
-        break
+# while gps_uart.any() >= 0:
+#     my_gps.update(chr(gps_uart.readchar()))
+#     print('No GPS signal!!!\n')
+#     xbee_uart.write('No GPS signal!!!\n')
+#     print(my_gps.latitude)
+#     if my_gps.latitude[0] != 0:
+#         break
 
 # Set up motorA
 DIRA = 'X7'
@@ -192,12 +192,12 @@ enc_timer_B = pyb.Timer(4, prescaler=0, period=65535)
 enc_channel_A = enc_timer_A.channel(1, pyb.Timer.ENC_AB)
 enc_channel_B = enc_timer_B.channel(2, pyb.Timer.ENC_AB)
 
-init_lat = convert_latitude(my_gps.latitude)
-init_long = convert_longitude(my_gps.longitude)
-init_point = (init_lat, init_long)
+# init_lat = convert_latitude(my_gps.latitude)
+# init_long = convert_longitude(my_gps.longitude)
+# init_point = (init_lat, init_long)
 
 # Start motorA
-# motorA.start(30,'cw')
+motorA.start(30,'cw')
 xbee_uart.write('MotorA started!\n')
 init_A = enc_timer_A.counter()
 total_A = 0
@@ -206,7 +206,7 @@ correction_A = 0
 pid_A = 0
 
 # Start motorB
-# motorB.start(30,'ccw')
+motorB.start(30,'ccw')
 xbee_uart.write('MotorB started!\n')
 init_B = enc_timer_B.counter()
 total_B = 0
@@ -279,25 +279,25 @@ tim_call_B = pyb.Timer(8, freq=10)
 tim_call_B.callback(encoder_B)
 
 # Callback for GPS
-GPS_PID_call = pyb.Timer(11, freq=0.5)
-GPS_PID_call.callback(GPS_bearing)
+# GPS_PID_call = pyb.Timer(11, freq=0.5)
+# GPS_PID_call.callback(GPS_bearing)
 
-kp = 1
-ki = 0.0000001
-kd = 0.01
-pid = pyPID.PID(kp, ki, kd, 100000, 712, 135)
-sw = pyb.Switch()
+# kp = 2
+# ki = 0
+# kd = 10
+# pid = pyPID.PID(kp, ki, kd, 100000, 712, 135)
+# sw = pyb.Switch()
 
 
-while True:
-    correction_A = pid.compute_output(new_PID_speed, total_A)
-    conversion_A = arduino_map(correction_A, 135, 712, 20, 100)
-    motorA.change_speed(conversion_A)
+# while True:
+#     correction_A = pid.compute_output(400, total_A)
+#     conversion_A = arduino_map(correction_A, 135, 712, 20, 100)
+#     motorA.change_speed(conversion_A)
 
-    correction_B = pid.compute_output(new_PID_speed, total_B)
-    conversion_B = arduino_map(correction_B, 135, 712, 20, 100)
-    motorB.change_speed(conversion_B)
-    if sw():
-        motorA.stop()
-        motorB.stop()
-        break
+#     correction_B = pid.compute_output(400, total_B)
+#     conversion_B = arduino_map(correction_B, 135, 712, 20, 100)
+#     motorB.change_speed(conversion_B)
+#     if sw():
+#         motorA.stop()
+#         motorB.stop()
+#         break
