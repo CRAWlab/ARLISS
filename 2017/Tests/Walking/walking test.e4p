@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE Project SYSTEM "Project-5.1.dtd">
 <!-- Pymakr project file for project walking test -->
-<!-- Saved: 2017-04-10, 15:17:45 -->
+<!-- Saved: 2017-04-12, 16:53:41 -->
 <!-- Copyright (C) 2017 0.1, 0.1 -->
 <Project version="5.1">
   <Language>en_US</Language>
@@ -15,6 +15,10 @@
   <Eol index="1"/>
   <Sources>
     <Source>__init__.py</Source>
+    <Source>encoder_class.py</Source>
+    <Source>main.py</Source>
+    <Source>motor_class.py</Source>
+    <Source>rover_function_class.py</Source>
   </Sources>
   <Forms/>
   <Translations/>

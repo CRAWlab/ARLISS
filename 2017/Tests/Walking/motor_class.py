@@ -22,9 +22,8 @@
 # -Added Encoder structure to recognize direction
 
 #Import Libraries used in class
-import machine
-from machine import PWM, Timer
-from machine import Pin
+
+from machine import PWM, Pin
 import time
 
 
@@ -103,56 +102,36 @@ class encoder:
     
     def __init__(self, hallsensorApin, hallsensorBpin):
         self.count = 0
-        self.current_count=self.count
+
         
         self.hallsensorA = Pin(hallsensorApin, mode=Pin.IN, pull=Pin.PULL_UP)
         self.hallsensorB = Pin(self.hallsensorBpin, mode=Pin.IN, pull=Pin.PULL_UP)
+        self.count_max=1800 #This is the amount of pulses per revolution 
+        self.count_min=0
         
+    
     def rencoder(self):
         if self.hallsensorA()==0:
             self.count += 1
+            if self.count==self.count_max:
+                self.count=0
         elif self.hallsensorB()==0:
             self.count -= 1
-            
+            if self.count==self.count_min:
+                self.count=1800
+    def set_count(self):
+        self.count= 0 
+        return self.count
+        
     def get_count(self):
-        return self.current_count
+        return self.count
         
-def stand(self, motorA, motorB, motorC, motorD):
-        '''''Called When rover lands as expected'''''
-        motorA.speed=0.2
-        motorA.motordirection(1)
-        motorB.speed=0.2
-        
+    def trigger(self, direction):   
+        self.direction = direction
+        if self.direction =='CCW':
+            self.hallsensorA.callback(Pin.IRQ_FALLING,  self.rencoder)
+        if self.direction =='CW':
+            self.hallsensorB.callback(Pin.IRQ_FALLING, self.rencoder)
+            
 
-        motorB.PHpin(1)
-        if motorA.count == 0:
-            motorA.speed = 0
-            continue
-        if motorB.count == 0:
-            motorB.speed =0
-            continue
-        motorC.speed=0.2
-        motorD.speed=0.2
-        motorC.PHpin(1)
-        motorD.PHpin(1)
-        if motorC.count & motorB.count == 0:
-            motorD.speed = 0
-            motorC.speed = 0
-            continue
-
-def upside_down_stand(self,  speed, motorA, motorB, motorC, motorD):  
-        '''''Called When rover lands unexpectedly'''''
-        
-        pass
-        
-def stop(self, speed, motorA, motorB, motorC, motorD):
-        pass
-def forward(self, speed, motorA, motorB, motorC, motorD):
-        pass
-def backward(self, speed, motorA, motorB, motorC, motorD):
-        pass
-def turn_left(self, speed, motorA, motorB, motorC, motorD):
-        pass
-def turn_right(self, speed, motorA, motorB, motorC, motorD):
-        pass
         

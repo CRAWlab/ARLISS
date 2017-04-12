@@ -84,6 +84,7 @@ class motor:
         self.isRunning = False
         self.current_direction = None
         self.current_speed = 0.0
+        
     def attributes(self):
         ENpin=self.ENpin
         PHpin=self.PHpin
@@ -116,43 +117,4 @@ class encoder:
             
     def get_count(self):
         return self.current_count
-        
-def stand(self, motorA, motorB, motorC, motorD):
-        '''''Called When rover lands as expected'''''
-        motorA.speed=0.2
-        motorA.motordirection(1)
-        motorB.speed=0.2
-        
-
-        motorB.PHpin(1)
-        if motorA.count == 0:
-            motorA.speed = 0
-            continue
-        if motorB.count == 0:
-            motorB.speed =0
-            continue
-        motorC.speed=0.2
-        motorD.speed=0.2
-        motorC.PHpin(1)
-        motorD.PHpin(1)
-        if motorC.count & motorB.count == 0:
-            motorD.speed = 0
-            motorC.speed = 0
-            continue
-
-def upside_down_stand(self,  speed, motorA, motorB, motorC, motorD):  
-        '''''Called When rover lands unexpectedly'''''
-        
-        pass
-        
-def stop(self, speed, motorA, motorB, motorC, motorD):
-        pass
-def forward(self, speed, motorA, motorB, motorC, motorD):
-        pass
-def backward(self, speed, motorA, motorB, motorC, motorD):
-        pass
-def turn_left(self, speed, motorA, motorB, motorC, motorD):
-        pass
-def turn_right(self, speed, motorA, motorB, motorC, motorD):
-        pass
         
