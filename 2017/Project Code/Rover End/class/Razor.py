@@ -14,9 +14,10 @@
 #   - joshua.vaughan@louisiana.edu
 #   - http://www.ucs.louisiana.edu/~jev9637
 #
-# Modified:
-#   *
-#
+# Modified: 03/28/17
+#   -Joseph Fuentes
+# -jafuentes3594@yahoo.com
+# parsed orginal code to work with Pymakr IDE
 # TODO:
 #   * 09/14/16 - Implement binary parsing, only text parsing so far
 #   * 09/14/16 - Implement parsing of data in calibrated and raw modes
@@ -30,7 +31,7 @@ class Razor(object):
         # Set up the UART communications
         self.port = port
         self.baudrate = baudrate
-        self.uart = pyb.UART(port, baudrate)
+        self.uart = UART(port, baudrate)
 
         # Start with streaming off
         self.streaming = False
@@ -112,12 +113,11 @@ class Razor(object):
                 #   '#YPR=-35.87,26.25,0.26\r\n'
                 # So, we'll ignore the first 5 characters, then split at the commas
                 # Afterwards, we can convert the values to floats
-                yaw, pitch, roll = data[5:-1].decode('utf-8').split(',')
-
-                # Now convert the values from strings to floats
-                yaw = float(yaw)
-                pitch = float(pitch)
-                roll = float(roll)
+                
+                yaw_unfiltered ,  pitch_unfiltered,  roll_unfiltered = data.decode('utf-8').split(',')
+                yaw = int(yaw_raw.replace('x=', ''))
+                pitch = int(pitch_raw.replace('y=', ''))
+                roll = int(roll_raw.replace('z=', ''))
 
                 return yaw, pitch, roll
         else:
