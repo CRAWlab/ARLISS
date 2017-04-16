@@ -1,25 +1,26 @@
 from motor_class import motor, encoder
 
 class rover:
-    motorA = motor(16, 38,  0, 0)
-    motorB = motor(20, 39,  1, 1)
-    motorC = motor(22, 18,  2, 2)
-    motorD = motor(42, 17,  3, 3)
-
-    encoderA = encoder(5, 6)
-    encoderB = encoder(7, 8)
-    encoderC = encoder(11, 10)
-    encoderD = encoder(12, 13)
-    def __init__(self, motorA, motorB,  motorC,  motorD, encoderA, encoderB, encoderC, encoderD):
-        self.motorA= motorA
-        self.motorB= motorB
-        self.motorC= motorC
-        self.motorD= motorD
+#    motorA = motor(16, 38,  0, 0)
+#    motorB = motor(20, 39,  1, 1)
+#    motorC = motor(22, 18,  2, 2)
+#    motorD = motor(42, 17,  3, 3)
+#
+#    encoderA = encoder(5, 6)
+#    encoderB = encoder(7, 8)
+#    encoderC = encoder(11, 10)
+#    encoderD = encoder(12, 13)
+    
+    def __init__(self):
+        self.motorA= motor(16, 38,  0, 0)
+        self.motorB= motor(20, 39,  1, 1)
+        self.motorC= motor(22, 18,  2, 2)
+        self.motorD= motor(42, 17,  3, 3)
         
-        self.encoderA=encoderA
-        self.encoderB=encoderB
-        self.encoderC=encoderC
-        self.encoderD=encoderD
+        self.encoderA=encoder(5, 6)
+        self.encoderB=encoder(7, 8)
+        self.encoderC=encoder(11, 10)
+        self.encoderD=encoder(12, 13)
     
     def calibrate(self):
     ###############################User input section#################################
@@ -93,6 +94,7 @@ class rover:
     
         
     def lay_down(self):
+        
         pass
         
     def stand(self):
@@ -156,14 +158,20 @@ class rover:
                 motorD.change_speed(0)
             break   
         
-    def stop(self, speed, motorA, motorB, motorC, motorD):
-            motorA.stop
-            motorB.stop
-            motorC.stop
-            motorD.stop
+    def stop(self):
+            self.motorA.stop()
+            self.motorB.stop()
+            self.motorC.stop()
+            self.motorD.stop()
         
-    def forward(self, speed, motorA, motorB, motorC, motorD):
-        
+    def forward(self, speed):
+        self.encoderA.set_count()
+        self.encoderA.trigger('CCW')
+        self.encoderD.set_count()
+        self.encoderD.trigger('CCW')
+        while True: 
+         
+            
             pass
     def backward(self, speed, motorA, motorB, motorC, motorD):
             pass

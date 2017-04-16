@@ -43,21 +43,21 @@ class motor:
         self.timer_id=timer_id
         self.channel_id=channel_id
         #Assign IO as Enable and Phase  output,pins
-        self.EN = PWM(self.timer_id, frequency = 5000)
-        self.ENpin = self.EN.channel(self.channel_id, ENpin, duty_cycle=0)
-        self.PHpin = Pin(PHpin, Pin.OUT_PP)
+        EN = PWM(0, frequency = 5000)
+        self.ENpin = EN.channel(0, pin=ENpin, duty_cycle=0)
+        self.PHpin = Pin(PHpin, mode= Pin.OUT)
         
         #Preliminary Attributes
         self.isRunning = False
-        self.currentDirection = None
+        self.current_direction = None
         self.current_speed= 0
     def direction(self, direction):
         
         self.current_direction=direction
         
-        if direction=='CCW, ccw ':
+        if direction=='CCW ':
             self.PHpin(0)
-        elif direction =='CW, cw':
+        elif direction =='CW':
             self.PHpin(1)
             
     def change_speed(self, newspeed):
@@ -99,39 +99,44 @@ class motor:
         
         
 class encoder:
-    
     def __init__(self, hallsensorApin, hallsensorBpin):
+        
         self.count = 0
 
         
         self.hallsensorA = Pin(hallsensorApin, mode=Pin.IN, pull=Pin.PULL_UP)
-        self.hallsensorB = Pin(self.hallsensorBpin, mode=Pin.IN, pull=Pin.PULL_UP)
-        self.count_max=1800 #This is the amount of pulses per revolution 
+        self.hallsensorB = Pin('P21', mode=Pin.IN, pull=Pin.PULL_UP)
+        self.count_max=450 #This is the amount of pulses per revolution 
         self.count_min=0
         
     
-    def rencoder(self):
-        if self.hallsensorA()==0:
+    def rencoder(self, direction):
+        if direction=='CW':
             self.count += 1
-            if self.count==self.count_max:
-                self.count=0
-        elif self.hallsensorB()==0:
+#            if self.count==self.count_max:
+#                self.count=0
+
+        elif direction=='CCW':
             self.count -= 1
-            if self.count==self.count_min:
-                self.count=1800
-    def set_count(self):
+#            if self.count==self.count_min:
+#                self.count=1800
+
+    def reset_count(self):
         self.count= 0 
-        return self.count
         
     def get_count(self):
-        return self.count
+        encoder.count
         
     def trigger(self, direction):   
-        self.direction = direction
-        if self.direction =='CCW':
-            self.hallsensorA.callback(Pin.IRQ_FALLING,  self.rencoder)
-        if self.direction =='CW':
-            self.hallsensorB.callback(Pin.IRQ_FALLING, self.rencoder)
+#        self.direction = direction
+#        if self.direction =='CW':
+#            self.hallsensorA.callback(Pin.IRQ_RISING, self.rencoder(direction), arg=None)
+#        elif self.direction =='CCW':
+#            self.hallsensorB.callback(Pin.IRQ_FALLING, self.rencoder(direction), arg=None)
             
-
+        self.direction = direction
+        if self.direction =='CW':
+            self.hallsensorA.callback(Pin.IRQ_RISING,  self.rencoder(direction), arg=None)
+        elif self.direction =='CCW':
+            self.hallsensorB.callback(Pin.IRQ_FALLING, self.rencoder(direction), arg=None)
         
