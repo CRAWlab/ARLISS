@@ -60,17 +60,17 @@ import math
 pin_a = pyb.Pin('X1', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF1_TIM2)
 pin_b = pyb.Pin('X2', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF1_TIM2)
 
-#pin_c = pyb.Pin('X9', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE, af=pyb.Pin.AF2_TIM4)
-#pin_d = pyb.Pin('X10', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_NONE, af=pyb.Pin.AF2_TIM4)
+pin_c = pyb.Pin('X9', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF2_TIM4)
+pin_d = pyb.Pin('X10', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF2_TIM4)
 
 # The prescaler is ignored. When incrementing, the counter will count up-to
 # and including the period value, and then reset to 0.
 enc_timer = pyb.Timer(2, prescaler=0, period=65535)
-#enc_timer_1 = pyb.Timer(4, prescaler=0, period=65535)
+enc_timer_1 = pyb.Timer(4, prescaler=0, period=65535)
 # ENC_AB will increment/decrement on the rising edge of either the A channel or the B
 # B channel.
 enc_channel = enc_timer.channel(1, pyb.Timer.ENC_AB)
-#enc_channel_1 = enc_timer_1.channel(2, pyb.Timer.ENC_AB)
+enc_channel_1 = enc_timer_1.channel(2, pyb.Timer.ENC_AB)
 
 ############################## Motor Class ##############################
 
