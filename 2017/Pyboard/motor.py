@@ -190,56 +190,7 @@ class motor(object):
         # PWM.set_duty_cycle(self.PWMpin, newSpeed)
         self.currentSpeed = newSpeed
 
-################################# Pin Setup ####################################
-
-DIRA = 'Y9'
-PWMA = 'X8'
-TIMA = 14
-CHANA = 1
-
-DIRB = 'Y8'
-PWMB = 'Y7'
-TIMB = 12
-CHANB = 1
-
-motorA = motor(PWMA, DIRA, TIMA, CHANA)
-motorB = motor(PWMB, DIRB, TIMB, CHANB)
 
 
-######################## 2-Wheeled Rover Functions ###############################
 
-'''The following functions utilize the functions created in the motor class
-and provide basic movement functions for the rover.
-
-All spin-directions for motors assume left wheel is motorA and right wheel is motorB 
-when looking at top of rover with front facing forward.'''
-
-def move_forward(speed):
-#Move both wheels at same speed in same direction to move forward
-    motorA.start(speed, 'CCW')
-    motorB.start(speed, 'CW')
-
-def move_backward(speed):
-#Move both wheels at same speed in same direction to move backward
-    motorA.start(speed, 'CW')
-    motorB.start(speed, 'CCW')
-
-def speed_change(speed):
-    motorA.set_speed(speed)
-
-def stop():
-    motorA.stop()
-    motorB.stop()
-            
-def hard_stop():
-    motorA.hard_stop()
-    motorB.hard_stop()
-
-def one_wheel_pid(init_speed, desired_speed):
-    motorA.start(speed, 'CCW')
-    kp = (2*np.pi)**2
-    ki = 135.0
-    kd = 10.0
-    pid = PID(kp, ki, kd, 0.001, 100, 0, 0.0)
-    pid.compute_output(desired_speed, motorA.currentSpeed)
 

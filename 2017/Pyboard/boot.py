@@ -19,7 +19,7 @@ if switch_value:
     pyb.usb_mode('CDC+MSC')
     pyb.main('cardreader.py')           # if switch was pressed, run this
 else:
-    pyb.usb_mode('CDC+HID')
+    pyb.usb_mode('CDC+MSC')
     pyb.main('main.py')           # if switch wasn't pressed, run this
 
 pyb.LED(4).off()                # indicate that we finished selecting the mode
