@@ -85,6 +85,11 @@ xbee = UART(2, 115200)
 top_gps_uart = UART(3,9600)
 bot_gps_uart = UART(6,9600)
 
+#Instantiate the micropyGPS object
+top_gps = MicropyGPS(-7)
+bot_gps = MicropyGPS(-7)
+
+#Quadrature encoders:
 enc_A_chan_A = pyb.Pin('X1', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF1_TIM2)
 enc_A_chan_B = pyb.Pin('X2', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF1_TIM2)
 enc_B_chan_A = pyb.Pin('X9', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF2_TIM4)
@@ -106,7 +111,7 @@ motorB = motor(PWMB, DIRB, TIMB, CHANB)
 
 #Stopping Point 08/20/2017 -Joseph Fuentes
 
-# define variables for landing check
+# Define variables for landing check
 backup_timer = 5400000
 altitude_concurrent_timer = 3600000
 acceptable_dist_from_launch = 1000
@@ -114,9 +119,6 @@ acceptable_altitude_change = 25
 
 # Global Flag to start GPS data Processing
 new_data = False
-
-
-
 start = pyb.millis()
 
 # Callback Function
@@ -126,8 +128,6 @@ def pps_callback(line):
         new_data = True
 
 
-# Instantiate the micropyGPS object
-my_gps = MicropyGPS()
 
 # Setup the connection to your GPS here
 uart = UART(6, 9600, read_buf_len=1000)
@@ -329,8 +329,6 @@ def bearing_difference(past, present):
         else:
             turn_direction = 0  # Stay straight
         return course_error, turn_direction, current_heading, desired_heading
-
-
 
 
 # #######################  Rover Loop  #########################################
