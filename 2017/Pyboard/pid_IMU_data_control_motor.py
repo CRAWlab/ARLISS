@@ -21,10 +21,9 @@
 
     '''
 import pyb
-import UART
 import math
 import time
-from pyboard_razorIMU import Razor
+from pyboard_razor_IMU import Razor
 from pyboard_PID import PID
 from motor import motor
 
@@ -60,46 +59,67 @@ motor_left = motor(PWMA, DIRA, TIMA, CHANA)
 motor_right = motor(PWMB, DIRB, TIMB, CHANB)
 
 #PID object
-kp_IMU
-ki_IMU  = 0
-kd_IMU  = 0
+kp_IMU  = 2
+ki_IMU  = 0.001
+kd_IMU  = 1
 dt = 10000
-max_out = 712
-min_out = 110
+max_out = 90
+min_out = 10
 pid_IMU = PID(kp_IMU, ki_IMU, kd_IMU, dt, max_out, min_out)
 
-IMU_min =
-IMU_max =
+IMU_min =-180
+IMU_max = 180
 # Including sensitivity
 sensitivity = 10
 ######################## Establish Angle / Start Motors ##########################
 initial_read = IMU_read()
-initial_angle = initial_read[0]
-motor_left.start(50,ccw)
-motor_right.start(50,cw)
+initial_angle = initial_read
+motor_left.start(50,'cw')
+motor_right.start(50,'cw')
 
 #PID loop correcting motors speed in relation
 while True:
+    
     new_angle = IMU_read()
 
     if new_angle > (initial_angle + sensitivity): #The tank is drifting right
     
-        angle_correction = pid_IMU.compute_output(old_angle,new_angle)
-        speed_correction= arduino_map(angle_correction, IMU_min, IMU_max, 10, 100)
+        angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
+        speed_correction= arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
         current_speed = motor_left.currentSpeed
-        motor_left.change_speed(current_speed - speed_correction)
-        motor_right.change_speed(current_speed + speed_correction)
+        print(speed_correction)
+        motor_left.set_speed(current_speed - speed_correction)
+        motor_right.set_speed(current_speed + speed_correction)
+        print(motor_left.currentSpeed)
+        print(motor_right.currentSpeed)
+        print(initial_angle)
+        print(new_angle)
+
+        pyb.delay(500)
         continue
+
     elif new_angle < (initial_angle - sensitivity): #The tank is drifting left
-        angle_correction = pid_IMU.compute_output(old_angle,new_angle)
-        speed_correction= arduino_map(angle_correction, IMU_min, IMU_max, 10, 100)
+        angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
+        speed_correction= arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
         current_speed = motor_left.currentSpeed
-        motor_left.change_speed(current_speed + speed_correction)
-        motor_right.change_speed(current_speed - speed_correction)
+        motor_left.set_speed(current_speed + speed_correction)
+        motor_right.set_speed(current_speed - speed_correction)
+        print(speed_correction)
+        print(motor_left.currentSpeed)
+        print(motor_right.currentSpeed)
+        print(initial_angle)
+        print(new_angle)
+
+        pyb.delay(500)
         continue
     else:
         print("No Change")
-    time.sleep(3)
+        motor_right.set_speed(100)
+        motor_left.set_speed(100)
+        print(initial_angle)
+        pyb.delay(500)
+        continue
+
 
 
 

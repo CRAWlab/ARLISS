@@ -399,9 +399,7 @@ xbee.write('\n\nAt {}, I have landed at location: {}'.format(my_gps.timestamp, i
 # log.write('{},'.format(initial_point))
 
 # Breakout from parachute mechanism
-relay.high()
-pyb.delay(5000)
-relay.low()
+
 motor.move_forward(100)
 pyb.delay(10000)
 motor.stop()
