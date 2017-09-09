@@ -1,0 +1,40 @@
+
+Arliss 2017 Pyboard Pinout
+
+Created: 08/09/2017
+By: Joseph Fuentes
+    -jaf1036@louisiana.edu
+
+
+Pololu High-power motor drivers md07a:
+A=Left Track
+A_EN= 'Y3'
+A_PH= 'Y5'
+B=Right Track
+B_EN= 'Y4'
+B_PH= 'Y6'
+
+48 CPR Quadrature Encoders:
+A=Left Track
+enc_A_chan_A='X1'
+enc_A_chan_B='X2'
+B=Right Track
+enc_B_chan_A='Y7'
+enc_B_chan_B='Y8'
+
+Adafruit Ultimate Gps breakout board:
+UART 3
+Baudrate=9600
+PPS = 'X8'
+
+Sparkfun Razor IMU:
+UART 1
+Baudrate= 57600
+
+Xbee / sparkfun breakout board:
+UART 2
+Baudrate=115200
+
+Relay for burning parachute:
+Pin 'Y11'
+wired to NO part of circuit

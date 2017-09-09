@@ -8,14 +8,81 @@
 
 #################### Import Libraries#######################
 import pyb
+import machine
 from pyb import UART
 from pyboard_razor_IMU import Razor
-from pyb import ExtInt
 from pyb import Pin
 from micropyGPS import MicropyGPS
 from motor import motor
 import time
 import math
+
+################## Peripherial Setup ######################
+
+########### Sparkfun Razor IMU set up ##
+# UART 1
+# Baudrate 57600 bps, 1 stop bit, no parity
+# Buffer size very large (1000 chars) to accommodate all incoming characters
+razor_imu = Razor(1,57600, read_buf_len = 1000)
+
+#Pyboard IMU set up
+pyb_accel = pyb.Accel() #Using the on-board accelerometer to determine landing orientation
+
+
+################ Xbee Setup ########################
+#UART 2
+#Baudrate 115200 bps, 1 stop bit, no parity
+xbee = UART(2, 115200)
+
+################ GPS set up ########################
+# UART 3
+# Baudrate is 9600bps, with the standard 8 bits, 1 stop bit, no parity
+# Buffer size very large (1000 chars) to accommodate all incoming characters
+# each second
+my_gps_uart = UART(3,9600,read_buf_len=1000)
+# Instantiate the micropyGPS object
+# Changing Local offset to Blackrock time -7
+my_gps = MicropyGPS()
+
+########### Quadrature encoder set up ##############
+# Pin(Board Pin, Alternate function, Pull up resistor enabled, changing Alternate function to use for encoder channel)
+enc_A_chan_A = pyb.Pin('X1', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF1_TIM2) #Timer 2 CH1
+enc_A_chan_B = pyb.Pin('X2', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF1_TIM2) #Timer 2 CH2
+enc_B_chan_A = pyb.Pin('Y7', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF9_TIM12) #Timer 12 CH1
+enc_B_chan_B = pyb.Pin('Y8', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF9_TIM12) #Timer 12 CH2
+
+# Putting the Pyboard Channels into encoder mode
+enc_timer_A = pyb.Timer(2, prescaler=0, period = 65535)
+enc_timer_B = pyb.Timer(12, prescaler=0, period = 65535)
+encoder_A= enc_timer_A.channel(1, pyb.Timer.ENC_AB)
+encoder_B = enc_timer_B.channel(1, pyb.Timer.ENC_AB)
+
+################# Motor Set up #####################
+#Motors:
+DIRA = 'Y5'
+PWMA = 'Y3'
+TIMA = 10
+CHANA = 1
+
+DIRB = 'Y6'
+PWMB = 'Y4'
+TIMB = 11
+CHANB = 1
+
+#Motor Object:
+motorA = motor(PWMA, DIRA, TIMA, CHANA)
+motorB = motor(PWMB, DIRB, TIMB, CHANB)
+
+####### Relay setup ########
+# Used for burning parachute
+# Pin Y11
+# Output Pin
+
+relay = Pin('Y11', Pin.OUT_PP)
+
+################## End Peripheral set up #####################
+
+
 
 
 ################### Defining Functions ####################
@@ -120,26 +187,29 @@ def convert_latitude(lat_NS):
         """
     
     return (lat_NS[0] + lat_NS[1] / 60) * (1.0 if lat_NS[2] == 'N' else -1.0)
+
 #Relay
 def burn_parachute(burn_time):
     relay.high()
     pyb.delay(burn_time)
     relay.low()
 #Pyboard IMU
-def get_landing_orientation():
-    landing_orientation = accel.z() # Determines the landing orientation of rover
+'''def get_landing_orientation():
+    angle = razor_imu.get_one_frame()
+    landing_orientation = angle[1]
+ # Determines the landing orientation of rover
     if landing_orientation > 0:
         my_gps = top_gps_uart
         message = 'Pyboard facing sky'
         orientation = [my_gps,message]
         return orientation
     
-    elif landing landing_orientation < 0:
+    elif landing_orientation < 0:
         my_gps = bot_gps_uart
         message = 'Pyboard facing ground'
         orientation = [my_gps,message]
         return orientation
-
+'''
 #Xbee
 
 #IMU
@@ -191,16 +261,14 @@ def turn_degree(speed,direction,degree):
         motorB.start(50,'CW')
         if new_yaw >= 180:
             new_yaw = new_yaw-360
-            continue
-        continue
+    
     elif direction == 'CW':
         new_yaw = int(old_yaw)-degree_to_turn
         motorA.start(speed,'CCW')
         motorB.start(50,'CCW')
         if new_yaw <= -180:
             new_yaw = new_yaw+360
-            continue
-        continue
+        
     while True:
         current_yaw = int(current_angle[0])
         if current_yaw == new_yaw:
@@ -231,10 +299,10 @@ def imu_pid(self):
 
     #PID object
     kp_IMU  = 2
-    ki_IMU  = 0.001
+    ki_IMU  = 0
     kd_IMU  = 1
     dt = 10000
-    max_out = 90
+    max_out = 50
     min_out = 10
     pid_IMU = PID(kp_IMU, ki_IMU, kd_IMU, dt, max_out, min_out)
 
@@ -282,23 +350,24 @@ def bearing_difference(finish_point, past, present):
         then determines how far to turn the right wheel to correct for the
         error.
         """
-            finish_point = finish_point
-            current_heading = calculate_bearing(past, present)
-            desired_heading = calculate_bearing(present, finish_point)
-            course_error = desired_heading - current_heading
+    finish_point = finish_point
+    current_heading = calculate_bearing(past, present)
+    desired_heading = calculate_bearing(present, finish_point)
+    course_error = desired_heading - current_heading
             # Correct for heading 'wrap around' to find shortest turn
-            if course_error > 180:
-                course_error -= 360
-            elif course_error < -180:
-                course_error += 360
+
+    if course_error > 180:
+        course_error -= 360
+    elif course_error < -180:
+        course_error += 360
             # record the turn direction - mainly for debugging
-            if course_error > 0:
-                turn_direction = 1  # Turn right
-            elif course_error < 0:
-                turn_direction = -1  # Turn left
-            else:
-                turn_direction = 0  # Stay straight
-            return course_error, turn_direction, current_heading, desired_heading
+    if course_error > 0:
+        turn_direction = 1  # Turn right
+    elif course_error < 0:
+        turn_direction = -1  # Turn left
+    else:
+        turn_direction = 0  # Stay straight
+        return course_error, turn_direction, current_heading, desired_heading
 
 def angle_to_motor_turn(self,wheel_separation, wheel_radius, gain, angle, direction):
     """
@@ -329,14 +398,6 @@ def angle_to_motor_turn(self,wheel_separation, wheel_radius, gain, angle, direct
         print("time: {}".format(time_to_rotate))
         time.sleep(abs(time_to_rotate))
         motorB.stop()
-
-
-def pps_callback(line):
-    # print("Updated GPS Object...")
-    global new_data  # Use Global to trigger update
-        new_data = True
-
-
 
 #Encoders
 

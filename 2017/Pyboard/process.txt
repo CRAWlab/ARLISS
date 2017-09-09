@@ -1,0 +1,50 @@
+Functional Process Algorithm for ARLISS 2017
+Created: 08/09/2017
+By: Joseph Fuentes
+    -jaf1036@louisiana.edu
+
+Must have the following files in directory:
+functions.py
+micropyGPS.py
+motor.py
+pyboard_razor_imu.py
+
+Peripherals:
+Adafruit Ultimate GPS
+Sparkfun Razor IMU
+XBee Pro with sparkfun breakout board
+210 RPM Gearmotor With 48 CPR Encoders
+md07a High-power Pololu Motor Drivers
+
+This file is a higher level process for the ARLISS robot project
+**This process relies heavily on boot.py and functions.py make sure appropriate files are in directory**
+Process Algorithm:
+-Accept goal coordinates
+-Await ascent
+-Detach from rocket
+-Detect descent
+-Once rover is no longer descending communicate that it has landed
+-Determine the orienation of how the tank has landed
+-Establish fix and get first location
+-Begin output signal to burn parachute
+-Wait time period [burn_time] to insure parachute has finished burning off
+-End relay output signal
+-Aquire Current location
+-Drive forward for time period [delta_foward]
+-Aquire new location and bearing of rover
+-Calculate Distance to target
+-Turn to face target
+-Begin Travel loop
+-Maintain Bearing
+IMU:
+-Monitor angular rotation
+-Send Signal To motors of rotation is detected
+Motors:
+-Use PID's to maintain desired speed
+-Coorporate with the IMU to ensure straight travel
+-Distance From Target
+GPS:
+-Check Position as a function
+[Position needs to be checked more frequently as the rover is further from he target]
+
+also see 'arliss_pinout_2017.txt' for pint out
