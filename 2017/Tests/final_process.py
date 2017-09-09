@@ -129,7 +129,6 @@ load_up = pyb.delay(10000) #Creation of delay in process in order to give time f
 
 process_start= pyb.millis()#Starting a time count
 
-#Sending information via XBee to monitoring station
 xbee.write('\nprogram initiated at: {}'.format(my_gps.timestamp))
 xbee.write('\ntarget point: {}'.format(finish_point))
 xbee.write('\nlaunching at: {}'.format(launch_point))

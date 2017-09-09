@@ -10,20 +10,34 @@ import time
 import math
 import functions
 from pyb import ExtInt
-################### User Input ############################
+################### Goal Coordinate Input ############################
+# Coordinate given to team by ARLISS TEAM enter below
+
 finish_point=(30.2107,-92.0209)
-
-distance_tolerance = 3
-wheel_separation =5.275
-wheel_radius =0.875
-gain = 0.75
-
 
 ################# End User Input ##########################
 
+################### Global Variables ######################
+burn_time = 10000 #Time it takes to Burn Nychron wire completely [ms]
+load_up_time_mins = 45 # mins it takes to load into rocket
+load_up_time = load_up_time_mins * 60 * 1000 # Time it takes to load up fully into rocket [ms]
+settling_time = 30000 # 30s settling time after rover has landed
+altitude_concurrent_timer = 3600000
+acceptable_dist_from_launch = 1000
+acceptable_altitude_change = 25
+black_rock_alt_m = 1191 # Altitude of black rock [meters]
+alt_threshold = 1 # Allowable threshold altitude between GPS data and estimated Altitude
+distance_tolerance = 3 # Allowable distance between goal and rover location [meters]
+wheel_separation = 5.275 # Separation of tracks [inches]
+wheel_radius =0.875 # radius of tracks [inches]
+gain = 0.75 # adjustable value to account for inertial effects
+
+
+
+
+###################### GPS / New Data set up ###########
 # Global Flag to Start GPS data Processing
 new_data = False
-
 
 def pps_callback(line):
     print("Updated GPS Object...")
@@ -34,53 +48,68 @@ def pps_callback(line):
 '''The Adafruit GPS has a PPS pin that changes from high to low only when we are recieving data
     we will use this to our advantage by associating it with an iterrupt to change indicate we are recieving new data see functions.py for pps_callback'''
 
-
 pps_pin = pyb.Pin.board.X8
 extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
 
-###########################################################
-
 my_gps_uart = functions.my_gps_uart
 my_gps = functions.my_gps
+
+#Grabbing the Xbee object created in functions.py
 xbee = functions.xbee
-################### Global Variables ######################
-burn_time = 10000 #Time it takes to Burn Nychron wire completely [ms]
-backup_timer = 5400000
-wheel_separation = 5.275
-wheel_radius = 0.875
-gain = 0.5
-distance_tolerance = 2
+
 
 ################### Begin Process #########################
-pyb.delay(5000)
-functions.move_forward(100)
-pyb.delay(5000)
-functions.stop()
-pyb.LED(3).on()
-pyb.delay(2000)
-pyb.LED(3).off()
+process_start= pyb.millis()#Starting a time count at point of startup
+pyb.delay(60000) # Wait a minute before sending data via xbee
+xbee.write('\nprogram initiated at: {}'.format(my_gps.timestamp)) # Sending time stamp when process started
+xbee.write('\ntarget point: {}'.format(finish_point)) # Sending Target Point
 
-'''
+# Load up rover into rocket
+pyb.delay(load_up_time)
 
-#Sending information via XBee to monitoring station
-xbee.write('\nprogram initiated at: {}'.format(my_gps.timestamp))
-xbee.write('\ntarget point: {}'.format(finish_point))
-xbee.write('\nlaunching at: {}'.format(launch_point))
+# Begin descent
+while 1:
+    # Update the GPS Object when flag is tripped
+    if new_data:
+        while my_gps_uart.any():
+            my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
+        
+        current_altitude = my_gps.altitude
+        pyb.delay(1000)
+        new_data = False  # Clear the flag
+        
+        if current_altitude < black_rock_alt_m + alt_threshold:
+            xbee.write('Rover has landed beginning parachute burning') # Sending Target Point
+            break
 
-#Checking orientation
-orientation_check = functions.get_landing_orientation()
-#defining which gps is in use
-my_gps = orientation_check[0] #Assigning whichever gps is in use as main
-# sending the orientation to observer
-xbee.write(orientation_check[1]) #Sending monitor which gps is in use
-
+# Wait some time to let things settle
+pyb.delay(settling_time)
 
 #Burn Parachute and move for 10s
 functions.burn_parachute(burn_time)
 functions.move_forward(100)
 pyb.delay(10000)
 functions.stop()
-'''
+xbee.write('Parachute burned successfully....Aquiring Location')
+
+# Establish Landing Point
+while 1:
+    xbee.write('Aquiring Location')
+    if new_data:
+        while my_gps_uart.any():
+            my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
+        
+        landing_lat = functions.convert_latitude(my_gps.latitude)
+        landing_lon = functions.convert_longitude(my_gps.longitude)
+        landing_point = (start_lat, start_long)
+        xbee.write('Location aquired')
+        xbee.write('\nLanding point: {}'.format(landing_point))
+        pyb.delay(1000)
+        new_data = False  # Clear the flag
+        break
+# Calculate Distance to goal
+dist_from_goal = functions.calculate_distance(finish_point, landing_point)
+xbee.write('\nDistance from Goal: {}'.format(dist_from_goal))
 
 '''#Establishing landing point
 while True:
