@@ -218,15 +218,15 @@ def one_wheel_pid(init_speed, desired_speed):
     pid.compute_output(desired_speed, motorA.currentSpeed)
 
 
-def arduino_map(x, in_min, in_max, out_min, out_max):
+def arduino_map(self, x, in_min, in_max, out_min, out_max):
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 #Reading the IMU to get angle data
-def IMU_read():
+def IMU_read(self):
     angle = razor_imu.get_one_frame()
     return angle[0]
 
-def imu_pid():
+def imu_pid(self):
 
 
     #PID object
@@ -243,19 +243,19 @@ def imu_pid():
     # Including sensitivity
     sensitivity = 10
 
-    initial_read = IMU_read()
+    initial_read = self.IMU_read()
     initial_angle = initial_read
 
 
     #PID loop correcting motors speed in relation
     while True:
     
-        new_angle = IMU_read()
+        new_angle = self.IMU_read()
     
         if new_angle > (initial_angle + sensitivity): #The tank is drifting right
         
             angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
-            speed_correction= arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
+            speed_correction= self.arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
             current_speedA = motorA.currentSpeed
             current_speedB = motorB.currentSpeed
             motorA.set_speed(current_speedA - speed_correction)
@@ -265,7 +265,7 @@ def imu_pid():
 
         elif new_angle < (initial_angle - sensitivity): #The tank is drifting left
             angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
-            speed_correction= arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
+            speed_correction = self.arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
             current_speedA = motorA.currentSpeed
             current_speedB = motorB.currentSpeed
             motorA.set_speed(current_speedA + speed_correction)
@@ -275,6 +275,67 @@ def imu_pid():
             break
         else:
             break
+
+def bearing_difference(finish_point, past, present):
+    """
+        This function take two points and determines the bearing between them,
+        then determines how far to turn the right wheel to correct for the
+        error.
+        """
+            finish_point = finish_point
+            current_heading = calculate_bearing(past, present)
+            desired_heading = calculate_bearing(present, finish_point)
+            course_error = desired_heading - current_heading
+            # Correct for heading 'wrap around' to find shortest turn
+            if course_error > 180:
+                course_error -= 360
+            elif course_error < -180:
+                course_error += 360
+            # record the turn direction - mainly for debugging
+            if course_error > 0:
+                turn_direction = 1  # Turn right
+            elif course_error < 0:
+                turn_direction = -1  # Turn left
+            else:
+                turn_direction = 0  # Stay straight
+            return course_error, turn_direction, current_heading, desired_heading
+
+def angle_to_motor_turn(self,wheel_separation, wheel_radius, gain, angle, direction):
+    """
+        This function takes the angle and issues a timed command to one motor to
+        rotate the rover to a specific angle. Angle must be in degrees; Direction is
+        right or left: Right = 1     Left = -1
+        ** If you want to turn right the left wheel must turn.**
+        """
+    wheel_distance = wheel_separation
+    radius = wheel_radius
+    angle = math.radians(angle)
+    number_of_revolutions = (wheel_distance * angle) / (2 * math.pi * radius)
+    # At speed = 30% how long does it take for the wheel to make one rev?
+    one_rev_time = 1
+    # work with the gain to make the rover turn correctly
+    gain = gain
+    time_to_rotate = (number_of_revolutions * one_rev_time) * gain
+    print(time_to_rotate)
+    # This is a right turn.
+    if direction == 1:
+        motorA.start(50, 'CCW')
+        print("time: {}".format(time_to_rotate))
+        time.sleep(abs(time_to_rotate))
+        motorA.stop()
+    # This is a left turn
+    else:
+        motorB.start(50, 'CW')
+        print("time: {}".format(time_to_rotate))
+        time.sleep(abs(time_to_rotate))
+        motorB.stop()
+
+
+def pps_callback(line):
+    # print("Updated GPS Object...")
+    global new_data  # Use Global to trigger update
+        new_data = True
+
 
 
 #Encoders

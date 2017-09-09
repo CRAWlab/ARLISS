@@ -1,12 +1,23 @@
-#!/bin/sh
-
-#  Process.py
-#  ARLISS 2017
-#
-#  Created by Joseph Fuentes on 8/22/17.
-#
-'''This file is a higher level process for the ARLISS robot project
+'''main.py
+    Intended for tank design for Arliss 2017
+    Created: Joseph Fuentes
+        -jaf1036@louisiana.edu
     
+    Must have the following files in directory:
+        functions.py
+        micropyGPS.py
+        motor.py
+        pyboard_razor_imu.py
+    
+    Peripherals:
+    Adafruit Ultimate GPS
+    Sparkfun Razor IMU
+    XBee Pro with sparkfun breakout board
+    210 RPM Gearmotor With 48 CPR Encoders
+    md07a High-power Pololu Motor Drivers
+    
+    This file is a higher level process for the ARLISS robot project
+    **This process relies heavily on boot.py and functions.py make sure appropriate files are in directory**
     Process Algorithm:
     -Accept goal coordinates
     -Await ascent
@@ -41,7 +52,6 @@
 import pyb
 from pyb import UART
 from pyboard_razor_IMU import Razor
-from pyb import ExtInt
 from pyb import Pin
 from micropyGPS import MicropyGPS
 from motor import motor
@@ -77,9 +87,11 @@ launch_point=
     -Top GPS:
     UART 3
     Baudrate=9600
+    PPS = 'X8'
     -Bottom GPS:
     UART 6
     Baudrate=9600
+    PPS = 'X7'
     
     IMU: 
     Internal 
@@ -91,17 +103,12 @@ launch_point=
     UART 2
     Baudrate=115200
     
+    
     Relay = 'Y11'
 '''
 
-def pps_callback(line):
-    # print("Updated GPS Object...")
-    global new_data  # Use Global to trigger update
-        new_data = True
 
-pps_pin = 'X8'
-extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP,
-                    pps_callback)
+
 ################### Global Variables ######################
 burn_time = 10000 #Time it takes to Burn Nychron wire completely [ms]
 backup_timer = 5400000
@@ -112,11 +119,17 @@ black_rock_alt_ft = 3907
 black_rock_alt_m = 1191
 threshold = 1
 distance_tolerance = 3
+wheel_separation =
+wheel_radius =
+gain = 0.5
 
 
 ################### Begin Process #########################
-process_start= pyb.millis()
+load_up = pyb.delay(10000) #Creation of delay in process in order to give time for setup
 
+process_start= pyb.millis()#Starting a time count
+
+#Sending information via XBee to monitoring station
 xbee.write('\nprogram initiated at: {}'.format(my_gps.timestamp))
 xbee.write('\ntarget point: {}'.format(finish_point))
 xbee.write('\nlaunching at: {}'.format(launch_point))
@@ -124,44 +137,52 @@ xbee.write('\nlaunching at: {}'.format(launch_point))
 #Altitude check to see if rover has landed
 while True:
     my_gps.update(chr(uart.readchar()))
-    if my_gps.altitude != 0
+    if my_gps.altitude != 0 #Condition for gps recieving data
         altitude = mygps.altitude
-        if altitude =< (black_rock_alt_m + threshold):
+        if altitude =< (black_rock_alt_m + threshold): #Condition if rover lands within threshold of blackrock
             xbee.write('\nRover has landed, Altitude: {}'.format(altitude))
-            break
-        elif pyb.elapsed_millis(start) >= backup_timer:
             break
         else:
             xbee.write('\nRover is in descent')
+            continue
+    elif pyb.elapsed_millis(start) >= backup_timer: #Back up timer to start process
+            break
+
 
 
 #Checking orientation
 orientation_check = functions.get_landing_orientation()
 #defining which gps is in use
-my_gps = orientation_check[0]
+my_gps = orientation_check[0] #Assigning whichever gps is in use as main
 # sending the orientation to observer
-xbee.write(orientation_check[1])
+xbee.write(orientation_check[1]) #Sending monitor which gps is in use
 
 
 #Establishing landing point
 while True:
     my_gps.update(chr(uart.readchar()))
-        if my_gps.latitude[0] != 0:
-            xbee.write('\nChecking GPS and altitude to see if landed...')
+        if my_gps.latitude[0] != 0: #Recieving Data
+            xbee.write('\nAquiring GPS Data')
+            pyb.delay(500)
             landing_lat = functions.convert_latitude(my_gps.latitude)
             landing_long = functions.convert_longitude(my_gps.longitude)
             landing_point = (landing_lat, landing_long)
             xbee.write('\nLanding point: {}'.format(landing_point))
+            break
+        else: #No usable data found continue checking
+            xbee.write('\nAquiring GPS Data')
+            pyb.delay(500)
+            continue
 
 #Calculate Distance to goal
 dist_from_goal = functions.calculate_distance(finish_point, landing_point)
 xbee.write('\nDistance from Goal: {}'.format(dist_from_goal))
 
-#Burn Parachute
+#Burn Parachute and move for 10s
 functions.burn_parachute(burn_time)
 functions.move_forward(100)
 pyb.delay(10000)
-motor.stop()
+functions.stop()
 
 ######################## Begin Navigation loop #######################
 #Establishing first location after separation of parachute
@@ -174,33 +195,46 @@ while True:
                 start_long = functions.convert_longitude(my_gps.longitude)
                 start_point = (start_lat, start_long)
                 new_data = False
-                past_point2 = None
                 break
             else:
                 new_data = False
 
+#Sending the location of the rover this marks the navigation process
 xbee.write('\nI will begin navigation at this location: {}'.format(past_point))
 dist_from_goal = functions.calculate_distance(finish_point, start_point)
-degree_to_turn = functions.calculate_bearing(start_point,finish_point)
-#turn rover degree
+degree_to_turn = functions.bearing_difference(finish_point, landing_point,start_point)
+functions.angle_to_motor_turn(wheel_separation, wheel_radius, gain, degree_to_turn[0], degree_to_turn[1])
+past_point = start_point
 
 #Start Movement
 while True:
+    '''This loop relies on checking for its location and replacing the initial_point with the most recently recorded point and determining bearing, distance, corrections etc..'''
+    initial_point = past_point
     functions.move_forward(100)
-    functions.imu_pid()
-    time.sleep(20)
+    
+    while True:
+            '''This loop preforms IMU control of the motors in order to maintain the rovers bearing for 20s before the next locational check refer to functions.py for further details'''
+                
+        start = time.ticks_ms() # get value of millisecond counter
+        functions.imu_pid()
+        delta = time.ticks_diff(time.ticks_ms(), start) # compute time difference
+        if delta == (20000):
+            break
+
     functions.stop()
-    # log.write("\nStopping!")
-    # motor.stop()
-    # time.sleep(0.1) # The sleep is for the slow stop; allows for a complete stop
     my_gps.update(chr(uart.readchar()))
     pres_lat = convert_latitude(my_gps.latitude)
     pres_long = convert_longitude(my_gps.longitude)
     present_point = (pres_lat, pres_long)
+    
     dist_from_goal = functions.calculate_distance(finish_point,present_point)
-    degree_to_turn = functions.calculate_bearing(present_point,finish_point)
+    degree_to_turn = functions.bearing_difference(finish_point, initial_point,present_point)
+    
+    functions.angle_to_motor_turn(wheel_separation, wheel_radius, gain, degree_to_turn[0], degree_to_turn[1])
+    pyb.delay(1000)
+    past_point = present_point
     #turn rover degree
-    if dist_from_goal <= distance_tolerance:
+    if dist_from_goal < distance_tolerance:
         functions.stop()
         xbee.write('\nDestination reached, present location: {}'.format(present_point))
         break
