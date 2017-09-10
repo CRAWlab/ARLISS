@@ -14,7 +14,7 @@ from pyboard_razor_IMU import Razor
 from pyb import Pin
 from micropyGPS import MicropyGPS
 from motor import motor
-import time
+from pyboard_PID import PID
 import math
 
 ################## Peripherial Setup ######################
@@ -55,7 +55,7 @@ enc_B_chan_B = pyb.Pin('Y8', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF9
 enc_timer_A = pyb.Timer(2, prescaler=0, period = 65535)
 enc_timer_B = pyb.Timer(12, prescaler=0, period = 65535)
 encoder_A= enc_timer_A.channel(1, pyb.Timer.ENC_AB)
-encoder_B = enc_timer_B.channel(1, pyb.Timer.ENC_AB)
+encoder_B = enc_timer_B.channel(2, pyb.Timer.ENC_AB)
 
 ################# Motor Set up #####################
 #Motors:
@@ -77,16 +77,13 @@ motorB = motor(PWMB, DIRB, TIMB, CHANB)
 # Used for burning parachute
 # Pin Y11
 # Output Pin
-
 relay = Pin('Y11', Pin.OUT_PP)
 
 ################## End Peripheral set up #####################
 
+########### Global Variables ##############
 
-
-
-################### Defining Functions ####################
-#GPS
+# Variables Relevant to GPS functionality
 EARTH_RADIUS = 6370000
 MAG_LAT = 82.7
 MAG_LON = -114.4
@@ -96,34 +93,58 @@ direction_names = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S",
 
 directions_num = len(direction_names)
 directions_step = 360 / directions_num
+distance = 0.0
+bearing = 0
+course_error = 0
+turn_direction = 0
+current_heading = 0
+desired_heading = 0
+# Variables Related to wheel movement
+wheel_separation = 5.275 # Separation of tracks [inches]
+wheel_radius =0.875 # radius of tracks [inches]
+gain = 0.75 # adjustable value to account for inertial effects
 
-def calculate_bearing(position1, position2):
-    ''' Calculate the bearing between two GPS coordinates
-        Equations from: http://www.movable-type.co.uk/scripts/latlong.html
-        Input arguments:
-        position1 = lat/long pair in decimal degrees DD.dddddd
-        position2 = lat/long pair in decimal degrees DD.dddddd
+
+################### Defining Functions ####################
+
+def arduino_map(self, x, in_min, in_max, out_min, out_max):
+    '''This function takes value x set to one range and maps it to a relevant range. Typically used for correction with PID'''
+    
+    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+def burn_parachute(burn_time):
+    
+    '''The parachute is wired to the Normally opened position of the relay the connected to ground. Once the output pin is set to high this will trigger the relay thus completing the circuit to generate heat to burn the parachute
+        Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017'''
+    
+    relay.high() # Set high to activate the relay
+    pyb.delay(burn_time) # Determined through testing
+    relay.low() # Set low to deactive the Relay
+
+########## GPS Related Functions ###########################
+def convert_latitude(lat_NS):
+    """ Function to convert deg m N/S latitude to DD.dddd (decimal degrees)
+        Arguments:
+        lat_NS : tuple representing latitude
+        in format of MicroGPS gps.latitude
         Returns:
-        bearing = initial bearing from position 1 to position 2 in degrees
-        Created: Joshua Vaughan - joshua.vaughan@louisiana.edu - 04/23/14
-        Modified:
-        *
-        '''
-    print(position1[0])
-    lat1 = math.radians(position1[0])
-    long1 = math.radians(position1[1])
-    lat2 = math.radians(position2[0])
-    long2 = math.radians(position2[1])
+        float representing latitidue in DD.dddd
+        Created By: Dr. Joshua Vaughan - joshua.vaughan@louisiana.edu
+        """
     
-    dLon = long2 - long1
-    
-    y = math.sin(dLon) * math.cos(lat2)
-    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dLon)
-    
-    bearing = (math.degrees(math.atan2(y, x)) + 360) % 360
-    
-    return bearing
+    return (lat_NS[0] + lat_NS[1] / 60) * (1.0 if lat_NS[2] == 'N' else -1.0)
 
+def convert_longitude(long_EW):
+    """ Function to convert deg m E/W longitude to DD.dddd (decimal degrees)
+        Arguments:
+        long_EW : tuple representing longitude
+        in format of MicroGPS gps.longitude
+        Returns:
+        float representing longtidue in DD.dddd
+        Created By: Dr. Joshua Vaughan - joshua.vaughan@louisiana.edu
+        """
+    
+    return (long_EW[0] + long_EW[1] / 60) * (1.0 if long_EW[2] == 'E' else -1.0)
 
 def calculate_distance(position1, position2):
     ''' Calculate the distance between two lat/long coords using simple
@@ -145,9 +166,8 @@ def calculate_distance(position1, position2):
         * Forrest Montgomery -- the micropython board did not like the radians
         conversion turned into a tuple. So I separated all the lats and longs.
         '''
-    
-    R = 6373000        # Radius of the earth in m
-    
+    global EARTH_RADIUS
+    global distance
     lat1, long1 = position1
     lat2, long2 = position2
     lat1 = math.radians(lat1)
@@ -159,78 +179,84 @@ def calculate_distance(position1, position2):
     dLon = long2 - long1
     
     x = dLon * math.cos((lat1+lat2)/2)
-    distance = math.sqrt(x**2 + dLat**2) * R
-    
+    distance = math.sqrt(x**2 + dLat**2) * EARTH_RADIUS
     return distance
 
-
-# converting functions from Dr. Vaughan
-def convert_longitude(long_EW):
-    """ Function to convert deg m E/W longitude to DD.dddd (decimal degrees)
-        Arguments:
-        long_EW : tuple representing longitude
-        in format of MicroGPS gps.longitude
+def calculate_bearing(self,position1, position2):
+    ''' Calculate the bearing between two GPS coordinates
+        Equations from: http://www.movable-type.co.uk/scripts/latlong.html
+        Input arguments:
+        position1 = lat/long pair in decimal degrees DD.dddddd
+        position2 = lat/long pair in decimal degrees DD.dddddd
         Returns:
-        float representing longtidue in DD.dddd
+        bearing = initial bearing from position 1 to position 2 in degrees
+        Created: Dr. Joshua Vaughan - joshua.vaughan@louisiana.edu
+        Modified:
+        *
+        '''
+    global bearing
+    lat1 = math.radians(position1[0])
+    long1 = math.radians(position1[1])
+    lat2 = math.radians(position2[0])
+    long2 = math.radians(position2[1])
+    dLon = long2 - long1
+    y = math.sin(dLon) * math.cos(lat2)
+    x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dLon)
+    bearing = (math.degrees(math.atan2(y, x)) + 360) % 360
+    
+    return bearing
+
+def bearing_difference(finish_point, past, present):
+    """
+        This function take two points and determines the bearing between them,
+        then determines how far to turn the right wheel to correct for the
+        error.
+        Created By: ARLISS 2015 Team
         """
+    global course_error
+    global turn_direction
+    global current_heading
+    global desired_heading
+
+    finish_point = finish_point
+    current_heading = calculate_bearing(past, present)
+    desired_heading = calculate_bearing(present, finish_point)
+    course_error = desired_heading - current_heading
     
-    return (long_EW[0] + long_EW[1] / 60) * (1.0 if long_EW[2] == 'E' else -1.0)
-
-
-def convert_latitude(lat_NS):
-    """ Function to convert deg m N/S latitude to DD.dddd (decimal degrees)
-        Arguments:
-        lat_NS : tuple representing latitude
-        in format of MicroGPS gps.latitude
-        Returns:
-        float representing latitidue in DD.dddd
-        """
+    # Correct for heading 'wrap around' to find shortest turn
     
-    return (lat_NS[0] + lat_NS[1] / 60) * (1.0 if lat_NS[2] == 'N' else -1.0)
+    if course_error > 180:
+        course_error -= 360
+    elif course_error < -180:
+        course_error += 360
+    # record the turn direction - mainly for debugging
+    if course_error > 0:
+        turn_direction = 1  # Turn right
+    elif course_error < 0:
+        turn_direction = -1  # Turn left
+    else:
+        turn_direction = 0  # Stay straight
+        return course_error, turn_direction, current_heading, desired_heading
 
-#Relay
-def burn_parachute(burn_time):
-    relay.high()
-    pyb.delay(burn_time)
-    relay.low()
-#Pyboard IMU
-'''def get_landing_orientation():
-    angle = razor_imu.get_one_frame()
-    landing_orientation = angle[1]
- # Determines the landing orientation of rover
-    if landing_orientation > 0:
-        my_gps = top_gps_uart
-        message = 'Pyboard facing sky'
-        orientation = [my_gps,message]
-        return orientation
-    
-    elif landing_orientation < 0:
-        my_gps = bot_gps_uart
-        message = 'Pyboard facing ground'
-        orientation = [my_gps,message]
-        return orientation
-'''
-#Xbee
+########## End GPS Related Functions ###########################
 
-#IMU
-def get_yaw():
-    angle = razor_imu.get_one_frame()
-    yaw = angle[0]
-    return yaw
-
-#Motor Functions:
+################# Motor / Encoder Related Functions ###################
 def move_forward(speed):
-    #Move both wheels at same speed in same direction to move forward
+    #Move both wheels at same speed in opposites direction to move forward
     motorA.start(speed, 'CCW')
     motorB.start(speed, 'CW')
 
 def move_backward(speed):
-    #Move both wheels at same speed in same direction to move backward
+    
+    #Move both wheels at same speed in sopposite directions to move backward
     motorA.start(speed, 'CW')
     motorB.start(speed, 'CCW')
 
 def speed_change(speed):
+    
+    # Change Speed to desired PWM
     motorA.set_speed(speed)
+    motorB.set_speed(speed)
 
 def stop():
     motorA.stop()
@@ -241,163 +267,223 @@ def hard_stop():
     motorB.hard_stop()
 
 def turn_left(speed):
+    # Open loop turning used for quick turning or where precision is irrelevant
     motorA.start(speed,'CW')
     motorB.start(speed,'CW')
 
 def turn_right(speed):
+    # Open loop turning used for quick turning or where precision is irrelevant
     motorA.start(speed,'CCW')
     motorB.start(speed,'CCW')
 
-def turn_degree(speed,direction,degree):
-    motorA.stop()
-    motorB.stop()
-    angle = razor_imu.get_one_frame()
-    old_yaw = angle[0]
-    degree_to_turn = degree
-    current_angle = razor_imu.start_streaming()
-    if direction == 'CCW':
-        new_yaw = int(old_yaw) + degree_to_turn
-        motorA.start(50,'CW')
-        motorB.start(50,'CW')
-        if new_yaw >= 180:
-            new_yaw = new_yaw-360
+def calculate_ang_velocity(encoder_timer)
+'''Uses data from associated encoder calculates difference in count over a sample time to output the angular velocity of the motor. 
+    Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017'''
+    encoder_timer = encoder_timer
+    cpr =2249 # Counts per revolution based on specifications and gear ratio of motor
+    start = pyb.millis() # Begin sample time
+    initial_count = encoder_timer.count() # Grabbing initial count of encoder
+    sample_time = pyb.delay(50) # Delay small but significant for sample time
+    '''Since the  maximum rps is 3.5 with 2249 cpr that equates to 7.87 counts per ms maximum allowing for 50ms to be sufficient'''
     
-    elif direction == 'CW':
-        new_yaw = int(old_yaw)-degree_to_turn
-        motorA.start(speed,'CCW')
-        motorB.start(50,'CCW')
-        if new_yaw <= -180:
-            new_yaw = new_yaw+360
-        
+    # velocity in counts per second
+    ang_velocity_cps = 1000*abs(encoder_timer.count()-initial_count)/(pyb.elapsed_millis(start))
+    
+    #velocity in revolutions per second
+    ang_velocity_revps = ang_velocity_cps/cpr
+    
+    return ang_velocity_revps
+
+def cruise_control(duration, speed):
+    '''Use encoder data to calulate actual angular velocity of motors based on input PWM. Then compares this actual angular velocity to a desired velocity and maps it to the appropriate PWM correction. Once the run time of the cruise control algorithm exceeds the desired duration of the function then it will stop the motors and end proceedure.
+        Like a normal cruise control it is intended for use only while moving forward.....
+        Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017'''
+    
+    # Maximum possible revolution per second of motor = 3.5 [210rpm]
+    
+    run_time = pyb.millis() # Start timer for the run time of the cruise control
+    duration = self.duration # Desired duration of the cruise control [ms]
+    speed = self.speed # Desired speed, value of PWM
+    
+    desired_velocity = arduino_map(speed, 0, 100, 0, 3.5) #Mapping desired PWM to angular velocity
+    
+    # PID values [NEEDS TUNING!!!!!]
+    kp_motor = 1
+    ki_motor = 0
+    kd_motor = 0
+    
+    # Creating PID object for each encoder
+    A_pid = PID(kp_motor, ki_motor, kd_motor, 100000, 3.5, -3.5)
+    B_pid = PID(kp_motor, ki_motor, kd_motor, 100000, 3.5, -3.5)
+    
     while True:
-        current_yaw = int(current_angle[0])
-        if current_yaw == new_yaw:
+        #Starting motors at the desired PWM
+        motorA.start(speed,'ccw')
+        motorB.start(speed,'cw')
+        
+        #Calculating actual angular velocity
+        A_velocity = calculate_ang_velocity(enc_timer_A)
+        B_velocity = calculate_ang_velocity(enc_timer_B)
+        
+        # Computing error of desired vs. actual
+        A_correction_= A_pid.compute_output(desired_velocity, A_velocity)
+        
+        #Mapping correction to the appropriate PWM
+        conversion_A = arduino_map(A_correction, 0, 3.5, 0, 100)
+        motorA.set_speed(conversion_A)
+        
+        # Computing error of desired vs. actual
+        B_correction_= B_pid.compute_output(desired_velocity, B_velocity)
+        
+        #Mapping correction to the appropriate PWM
+        conversion_B = arduino_map(B_correction, 0, 3.5, 0, 100)
+        motorB.set_speed(conversion_B)
+        
+        if pyb.elapsed_millis(run_time) > duration: # Condition to end function
             motorA.stop()
             motorB.stop()
-            razor_imu.get_one_frame()
             break
 
-def one_wheel_pid(init_speed, desired_speed):
-    motorA.start(speed, 'CCW')
-    kp = (2*np.pi)**2
-    ki = 135.0
-    kd = 10.0
-    pid = PID(kp, ki, kd, 0.001, 100, 0, 0.0)
-    pid.compute_output(desired_speed, motorA.currentSpeed)
+def correct_course_error(gain):
+    """
+        This function takes the angle and issues a timed command to one motor to
+        rotate the rover to a specific angle. Angle must be in degrees; Direction is
+        right or left: Right = 1     Left = -1
+        Gain is used to tweak values to compensate for inertial effects [gain>0]
+        Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017
+        """
+    
+    global wheel_separation
+    global wheel_radius
+    global turn_direction
+    global course_error
+    angle = math.radians(course_error)
+    speed = 40 # This PWM speed is approximately 1 revolution per second can be perfected with gain changes
+    number_of_revolutions = (wheel_separation * angle) / (2 * math.pi * wheel_radius)
+ 
+    one_rev_time = 1
+    # work with the gain to make the rover turn correctly
+    time_to_rotate = (number_of_revolutions * one_rev_time) * gain * 1000 # Multiply by 1000 to put in milliseconds
+    
+    # This is a right turn.
+    if turn_direction == 1:
+        motorA.start(speed, 'CCW')
+        pyb.delay(abs(time_to_rotate))
+        motorA.stop()
+    # This is a left turn
+    elif turn_direction ==-1:
+        motorB.start(speed, 'CW')
+        pyb.delay(abs(time_to_rotate))
+        motorB.stop()
+    else:
+        continue
+
+def turn_degree(angle,direction,gain):
+    
+    '''This function allows the user to to turn to a specified degree in the direction they choose.
+        Gain is used to tweak values to compensate for inertial effects [gain>0]
+        Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017'''
+    
+    global wheel_separation
+    global wheel_radius
+
+    angle = math.radians(angle)
+    turn_direction = direction # Must be 'left' or 'right'
+    speed = 40 # This PWM speed is approximately 1 revolution per second can be perfected with gain changes
+    number_of_revolutions = (wheel_separation * angle) / (2 * math.pi * wheel_radius)
+    
+    one_rev_time = 1
+    # work with the gain to make the rover turn correctly
+    time_to_rotate = (number_of_revolutions * one_rev_time) * gain * 1000 # Multiply by 1000 to put in milliseconds
+    
+    # This is a right turn.
+    if turn_direction == 'right':
+        motorA.start(speed, 'CCW')
+        pyb.delay(abs(time_to_rotate))
+        motorA.stop()
+    # This is a left turn
+    elif turn_direction == 'left':
+        motorB.start(speed, 'CW')
+        pyb.delay(abs(time_to_rotate))
+        motorB.stop()
 
 
-def arduino_map(self, x, in_min, in_max, out_min, out_max):
-    return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+################# End motor Related Functions ###################
 
-#Reading the IMU to get angle data
+################# IMU related Functions #########################
+
 def IMU_read(self):
     angle = razor_imu.get_one_frame()
-    return angle[0]
+    yaw, pitch, roll = angle
+    return yaw, pitch, roll
 
-def imu_pid(self):
+def imu_pid(self,duration,speed):
+    '''This functions utilizes the constant streaming function of the Razor IMU refer to 'pyboard_razor_IMU.py' for details. The function takes data from the IMU the stores it as an initial angle then uses changes in yaw to correct inconsistencies in motor speed'''
+   
+    run_time = pyb.millis() # Start timer for the run time of the cruise control
+    duration = self.duration # Desired duration of the cruise control [ms]
+    speed = self.speed # Desired speed, value of PWM
 
 
-    #PID object
+    # PID values [NEEDS TUNING!!!!!]
     kp_IMU  = 2
     ki_IMU  = 0
     kd_IMU  = 1
     dt = 10000
-    max_out = 50
-    min_out = 10
-    pid_IMU = PID(kp_IMU, ki_IMU, kd_IMU, dt, max_out, min_out)
-
+    
+    # Max / Min is limited to the object being influenced in this case motor PWM
+    max_out = 90
+    min_out = 0
+    
+    # Creating PID object
+    IMU_pid = PID(kp_IMU, ki_IMU, kd_IMU, dt, max_out, min_out)
+    
+    # Max / Min output angle produced by the IMU
     IMU_min =-180
     IMU_max = 180
-    # Including sensitivity
-    sensitivity = 10
-
-    initial_read = self.IMU_read()
-    initial_angle = initial_read
-
-
-    #PID loop correcting motors speed in relation
+    
+    # Included due to 'shake' in IMU
+    sensitivity = 3
+    
+    # Establishing initial yaw angle
+    initial_read = razor_imu.get_one_frame()
+    initial_angle = initial_read[0] # Only interested in yaw
+    motorA.start(speed,'ccw')
+    motorB.start(speed,'cw')
     while True:
+        pyb.delay(100)
+        new_read = razor_imu.get_one_frame()
+        new_angle = new_read[0]
     
-        new_angle = self.IMU_read()
-    
-        if new_angle > (initial_angle + sensitivity): #The tank is drifting right
-        
+        if abs(new_angle) > abs((initial_angle - sensitivity)): #The tank is drifting right
             angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
             speed_correction= self.arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
             current_speedA = motorA.currentSpeed
             current_speedB = motorB.currentSpeed
             motorA.set_speed(current_speedA - speed_correction)
             motorB.set_speed(current_speedB + speed_correction)
-            pyb.delay(500)
-            break
+            continue
 
-        elif new_angle < (initial_angle - sensitivity): #The tank is drifting left
+        elif abs(new_angle) < abs((initial_angle - sensitivity)): #The tank is drifting left
             angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
             speed_correction = self.arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
             current_speedA = motorA.currentSpeed
             current_speedB = motorB.currentSpeed
             motorA.set_speed(current_speedA + speed_correction)
             motorB.set_speed(current_speedB - speed_correction)
-        
-            pyb.delay(500)
+            continue
+
+        elif pyb.elapsed_millis(run_time) > duration: # Condition to end function
+            motorA.stop()
+            motorB.stop()
             break
+
         else:
             break
 
-def bearing_difference(finish_point, past, present):
-    """
-        This function take two points and determines the bearing between them,
-        then determines how far to turn the right wheel to correct for the
-        error.
-        """
-    finish_point = finish_point
-    current_heading = calculate_bearing(past, present)
-    desired_heading = calculate_bearing(present, finish_point)
-    course_error = desired_heading - current_heading
-            # Correct for heading 'wrap around' to find shortest turn
+################# End IMU related Functions ######################
 
-    if course_error > 180:
-        course_error -= 360
-    elif course_error < -180:
-        course_error += 360
-            # record the turn direction - mainly for debugging
-    if course_error > 0:
-        turn_direction = 1  # Turn right
-    elif course_error < 0:
-        turn_direction = -1  # Turn left
-    else:
-        turn_direction = 0  # Stay straight
-        return course_error, turn_direction, current_heading, desired_heading
 
-def angle_to_motor_turn(self,wheel_separation, wheel_radius, gain, angle, direction):
-    """
-        This function takes the angle and issues a timed command to one motor to
-        rotate the rover to a specific angle. Angle must be in degrees; Direction is
-        right or left: Right = 1     Left = -1
-        ** If you want to turn right the left wheel must turn.**
-        """
-    wheel_distance = wheel_separation
-    radius = wheel_radius
-    angle = math.radians(angle)
-    number_of_revolutions = (wheel_distance * angle) / (2 * math.pi * radius)
-    # At speed = 30% how long does it take for the wheel to make one rev?
-    one_rev_time = 1
-    # work with the gain to make the rover turn correctly
-    gain = gain
-    time_to_rotate = (number_of_revolutions * one_rev_time) * gain
-    print(time_to_rotate)
-    # This is a right turn.
-    if direction == 1:
-        motorA.start(50, 'CCW')
-        print("time: {}".format(time_to_rotate))
-        time.sleep(abs(time_to_rotate))
-        motorA.stop()
-    # This is a left turn
-    else:
-        motorB.start(50, 'CW')
-        print("time: {}".format(time_to_rotate))
-        time.sleep(abs(time_to_rotate))
-        motorB.stop()
 
-#Encoders
+
 
