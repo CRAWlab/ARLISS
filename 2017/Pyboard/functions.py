@@ -42,7 +42,7 @@ xbee = UART(2, 115200)
 my_gps_uart = UART(3,9600,read_buf_len=1000)
 # Instantiate the micropyGPS object
 # Changing Local offset to Blackrock time -7
-my_gps = MicropyGPS()
+my_gps = MicropyGPS(-7)
 
 ########### Quadrature encoder set up ##############
 # Pin(Board Pin, Alternate function, Pull up resistor enabled, changing Alternate function to use for encoder channel)
