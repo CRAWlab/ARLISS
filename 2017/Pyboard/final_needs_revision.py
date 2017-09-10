@@ -1,23 +1,45 @@
-
-#################### Import Libraries#######################
+'''ARLISS 2017
+    'main.py'
+    Created By: Joseph Fuentes - jaf1036@louisiana.edu -08/01/2017
+        In Collaboration With: Dr. Joshua Vaughan - joshua.vaughan@louisiana.edu
+                            Forrest Montgomery
+                            ARLISS teams 2015, 2016
+                            
+                            
+    Rover type: Tank
+    MCU: Pyboard v1.1 
+    
+    Include files on local/sd/:
+    'boot.py'
+    'functions.py'
+    'pyboard_razor_IMU.py'
+    'micropyGPS.py'
+    'motor.py'
+    'pyboard_PID.py'
+    
+    Modeified: Joseph Fuentes 08/09/2017
+                    Commented/ clean-up
+                
+    
+    '''
+#################### Import Libraries#########################
 import pyb
-from pyb import UART
-from pyboard_razor_IMU import Razor
-from pyb import Pin
-from micropyGPS import MicropyGPS
-from motor import motor
+import machine
 import time
 import math
 import functions
+from pyb import UART
+from pyb import Pin
 from pyb import ExtInt
-################### Goal Coordinate Input ############################
-# Insert coordinate given to team by ARLISS TEAM enter below
+
+################### Goal Coordinate Input #####################
+# Coordinate given to team by ARLISS Coordinators:
 
 finish_point=(30.2107,-92.0209)
 
-################# End User Input ##########################
+####################### End Input #############################
 
-################### Global Variables ######################
+################### Global Variables ##########################
 
 burn_time = 5000 # Time it takes to Burn Nychron wire completely [ms]
 load_up_time_mins = 45 # mins it takes to load into rocket
@@ -26,25 +48,22 @@ settling_time = 30000 # 30s settling time after rover has landed
 black_rock_alt_m = 1191 # Altitude of black rock [meters]
 alt_threshold = 1 # Allowable threshold altitude between GPS data and estimated Altitude
 distance_tolerance = 3 # Allowable distance between goal and rover location [meters]
+new_data = False # Global Flag to Start GPS data Processing
+
+################### End Global Variables ######################
 
 
-
-
-########### GPS / Interrupt setup ###########
+################### GPS / Interrupt setup #####################
 
 '''The Adafruit GPS has a PPS pin that changes from high to low only when we are recieving data
     we will use this to our advantage by associating it with an iterrupt to change indicate we are recieving new data'''
-
-# Global Flag to Start GPS data Processing
-new_data = False
-
 def pps_callback(line):
-    print("Updated GPS Object...")
+    '''The Adafruit GPS has a PPS pin that changes from high to low only when we are recieving data
+        we will use this to our advantage by associating it with an iterrupt to change indicate we are recieving new data'''
     global new_data # Use Global to trigger update
-    new_data = True #
+    new_data = True # Raise flag
 
 # Create an external interrupt on pin X8
-
 pps_pin = pyb.Pin.board.X8
 extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
 
@@ -52,20 +71,21 @@ extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callba
 my_gps_uart = functions.my_gps_uart
 my_gps = functions.my_gps
 
-########## End GPS / Interrupt setup ########
+################### End GPS / Interrupt setup #################
 
-#Grabbing the Xbee object created in functions.py
+# Grabbing the Xbee object created in functions.py
 xbee = functions.xbee
 
+# Create 'log.txt'
 ''''log.txt' will be the file that will document significant steps in the process
  'w' to create file
  'a'to append created file
  'r' to read existing file '''
-# Create 'log.txt'
+
 with open('/sd/log.txt', 'w') as log:
     log.write('Welcome to the ARLISS 2017 Log\n')
 
-################### Begin Process #########################
+###################### Begin Process ##########################
 process_start= pyb.millis()#Starting a time count at point of startup
 
 #Append log that the process has started
@@ -87,8 +107,9 @@ while True:
     if new_data:
         while my_gps_uart.any():
             my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
-        
         current_altitude = my_gps.altitude # Grabbing parameter designated by micropyGPS object
+        if current_altitude != 0:
+            continue
         pyb.delay(1000)
         new_data = False  # Clear the flag
         with open('/sd/log.txt', 'a') as log:
@@ -103,10 +124,11 @@ while True:
 # Wait some time to let things settle
 pyb.delay(settling_time)
 
-#Burn Parachute and move for 10s
+# Burn Parachute and move for 10s
 functions.burn_parachute(burn_time)
-functions.move_forward(100)
-pyb.delay(10000)
+
+
+functions.cruise_control(10000,80) # Duration 10s, 80% duty cycle
 functions.stop()
 xbee.write('Parachute burned successfully....Aquiring Location')
 with open('/sd/log.txt', 'a') as log:
@@ -124,7 +146,10 @@ while True:
         landing_lat = functions.convert_latitude(my_gps.latitude) # Grabbing parameter designated by micropyGPS object
         landing_lon = functions.convert_longitude(my_gps.longitude) # Grabbing parameter designated by micropyGPS object
         landing_point = (landing_lat, landing_lon) # Creating single variable for utilization in calculations
-
+        
+        # Using single part of landing point if one isnt equal to zero chances are neither is the other
+        if landing_lat != 0:
+            continue
         #Sending update via xbee
         xbee.write('Location aquired')
         xbee.write('\nLanding point: {}'.format(landing_point))
@@ -133,13 +158,9 @@ while True:
         with open('/sd/log.txt', 'a') as log:
             log.write('{}\n'.format(landing_point))
         new_data = False  # Clear the flag
-        
+        break
         #Using single part of landing point if one isnt equal to zero chances are neither is the other
-        if landing_point[0] != 0:
-            break
-        else:
-            
-            continue
+
 
 
 # Calculate Distance to goal
@@ -165,14 +186,13 @@ while True:
         arb_lat = functions.convert_latitude(my_gps.latitude) # Grabbing parameter designated by micropyGPS object
         arb_lon = functions.convert_longitude(my_gps.longitude) # Grabbing parameter designated by micropyGPS object
         arbitrary_point = (arb_lat, arb_lon) # Creating single variable for utilization in calculations
+        if landing_point[0] != 0:
+            continue
+        
         with open('/sd/log.txt', 'a') as log:
             log.write('Point to establish bearing aquired: {}\n'.format(arbitrary_point))
         new_data = False
-
-        if landing_point[0] != 0:
-            break
-        else:
-            continue
+        break
 
 # Now that 3 points have been established we can establish bearing and correct course
 functions.bearing_difference(finish_point,landing_point, arbitrary_point)
@@ -181,6 +201,7 @@ course_error_gain = 0.5
 xbee.write('Bearing calculated, correcting course')
 functions.correct_course_error(course_error_gain)
 distance_to_goal = functions.calculate_distance(arbitrary_point,finish_point)
+
 #################### Begin Navigation Loop ##################
 '''The navigation loop will behave as follows:
     -Travel for a time interval
@@ -246,7 +267,7 @@ while True:
                 
 # Goal Reached?????
 # Yes!
-    if distance_to_goal <= distance_tolerance:
+    if distance_to_goal < distance_tolerance:
         functions.stop()
         break
 # No :( preform another iteration
@@ -258,6 +279,7 @@ while True:
 with open('/sd/log.txt', 'a') as log:
     log.write('Location: {}\n'.format(current_point))
 log.close() #Closing log file
+total_time = pyb.elapsed_millis(process_start/60000) #Total process time in mins
 
 # Begin celebration!!
 xbee.write('Goal reached!!!!!\n Distribute high-fives\n')
