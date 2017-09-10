@@ -1,3 +1,4 @@
+
 #!/bin/sh
 
 #  correct_course_error.py
@@ -12,27 +13,34 @@ from pyb import ExtInt
 
 # Goal of this test is to find optimal value for course_error_gain
 
-finish_point = #enter desired finish point
+finish_point= (30.2107,-92.0209) #enter desired finish point
 course_error_gain = 0.5 # Adjust to fine tune turning
 def pps_callback(line):
     '''The Adafruit GPS has a PPS pin that changes from high to low only when we are recieving data
         we will use this to our advantage by associating it with an iterrupt to change indicate we are recieving new data'''
+    
     global new_data # Use Global to trigger update
     new_data = True # Raise flag
 
+my_gps = functions.my_gps
+my_gps_uart = functions.my_gps_uart
 # Create an external interrupt on pin X8
 pps_pin = pyb.Pin.board.X8
 extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
 
-finish_point = #enter desired finish point
 course_error_gain = 0.5 # Adjust to fine tune turning
-while True:
+
+
+while 1:
     if new_data:
         while my_gps_uart.any():
             my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
-        start_lat = functions.convert_latitude(my_gps.latitude) # Grabbing parameter designated by micropyGPS object
-        start_lon = functions.convert_longitude(my_gps.longitude) # Grabbing parameter designated by micropyGPS object
+        lat = my_gps.latitude
+        lon = my_gps.longitude
+        start_lat = functions.convert_latitude(lat) # Grabbing parameter designated by micropyGPS object
+        start_lon = functions.convert_longitude(lon) # Grabbing parameter designated by micropyGPS object
         start_point = (start_lat, start_lon) # Creating single variable for utilization in calculations
+        print(start_point)
         if landing_point[0] != 0:
             continue
         new_data = False

@@ -12,6 +12,7 @@ import machine
 from pyb import UART
 from pyboard_razor_IMU import Razor
 from pyb import Pin
+from pyb import Timer
 from micropyGPS import MicropyGPS
 from motor import motor
 from pyboard_PID import PID
@@ -24,10 +25,6 @@ import math
 # Baudrate 57600 bps, 1 stop bit, no parity
 # Buffer size very large (1000 chars) to accommodate all incoming characters
 razor_imu = Razor(1,57600, read_buf_len = 1000)
-
-#Pyboard IMU set up
-pyb_accel = pyb.Accel() #Using the on-board accelerometer to determine landing orientation
-
 
 ################ Xbee Setup ########################
 #UART 2
@@ -42,18 +39,18 @@ xbee = UART(2, 115200)
 my_gps_uart = UART(3,9600,read_buf_len=1000)
 # Instantiate the micropyGPS object
 # Changing Local offset to Blackrock time -7
-my_gps = MicropyGPS(-7)
+my_gps = MicropyGPS()
 
 ########### Quadrature encoder set up ##############
 # Pin(Board Pin, Alternate function, Pull up resistor enabled, changing Alternate function to use for encoder channel)
 enc_A_chan_A = pyb.Pin('X1', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF1_TIM2) #Timer 2 CH1
 enc_A_chan_B = pyb.Pin('X2', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF1_TIM2) #Timer 2 CH2
-enc_B_chan_A = pyb.Pin('Y7', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF9_TIM12) #Timer 12 CH1
-enc_B_chan_B = pyb.Pin('Y8', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF9_TIM12) #Timer 12 CH2
+enc_B_chan_A = pyb.Pin('Y1', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF3_TIM8) #Timer 8 CH1
+enc_B_chan_B = pyb.Pin('Y2', pyb.Pin.AF_PP, pull=pyb.Pin.PULL_UP, af=pyb.Pin.AF3_TIM8) #Timer 8 CH2
 
 # Putting the Pyboard Channels into encoder mode
 enc_timer_A = pyb.Timer(2, prescaler=0, period = 65535)
-enc_timer_B = pyb.Timer(12, prescaler=0, period = 65535)
+enc_timer_B = pyb.Timer(8, prescaler=0, period = 65535)
 encoder_A= enc_timer_A.channel(1, pyb.Timer.ENC_AB)
 encoder_B = enc_timer_B.channel(2, pyb.Timer.ENC_AB)
 
@@ -94,11 +91,13 @@ direction_names = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S",
 directions_num = len(direction_names)
 directions_step = 360 / directions_num
 distance = 0.0
+
 bearing = 0
 course_error = 0
 turn_direction = 0
 current_heading = 0
 desired_heading = 0
+
 # Variables Related to wheel movement
 wheel_separation = 5.275 # Separation of tracks [inches]
 wheel_radius =0.875 # radius of tracks [inches]
@@ -107,7 +106,7 @@ gain = 0.75 # adjustable value to account for inertial effects
 
 ################### Defining Functions ####################
 
-def arduino_map(self, x, in_min, in_max, out_min, out_max):
+def arduino_map(x, in_min, in_max, out_min, out_max):
     '''This function takes value x set to one range and maps it to a relevant range. Typically used for correction with PID'''
     
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
@@ -122,6 +121,53 @@ def burn_parachute(burn_time):
     relay.low() # Set low to deactive the Relay
 
 ########## GPS Related Functions ###########################
+new_data = False
+def pps_callback(line):
+    '''The Adafruit GPS has a PPS pin that changes from high to low only when we are recieving data
+        we will use this to our advantage by associating it with an iterrupt to change indicate we are recieving new data'''
+    
+    global new_data # Use Global to trigger update
+    new_data = True # Raise flag
+
+my_gps = functions.my_gps
+my_gps_uart = functions.my_gps_uart
+
+# Create an external interrupt on pin X8
+pps_pin = pyb.Pin.board.X8
+extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
+
+def monitor_descent():
+    while True:
+    # Update the GPS Object when flag is tripped
+    if new_data:
+        while my_gps_uart.any():
+            my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
+        current_altitude = my_gps.altitude # Grabbing parameter designated by micropyGPS object
+        if int(current_altitude) != 0:
+            continue
+        
+        if int(current_altitude) < black_rock_alt_m + alt_threshold:
+            new_data = False #clear flag
+            break
+    return current_altitude
+
+def get_location():
+    while 1:
+        if new_data:
+            while my_gps_uart.any():
+                my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
+            lat = my_gps.latitude
+            lon = my_gps.longitude
+            converted_lat = convert_latitude(lat) # Grabbing parameter designated by micropyGPS object
+            converted_lon = convert_longitude(lon) # Grabbing parameter designated by micropyGPS object
+            point = (converted_lat, converted_lon) # Creating single variable for utilization in calculations
+            pyb.delay(3000)
+        
+            if int(start_lat) != 0:
+                location = point
+                new_data = False
+                break
+    return location
 def convert_latitude(lat_NS):
     """ Function to convert deg m N/S latitude to DD.dddd (decimal degrees)
         Arguments:
@@ -180,9 +226,9 @@ def calculate_distance(position1, position2):
     
     x = dLon * math.cos((lat1+lat2)/2)
     distance = math.sqrt(x**2 + dLat**2) * EARTH_RADIUS
-    return distance
+    return int(distance)
 
-def calculate_bearing(self,position1, position2):
+def calculate_bearing(position1, position2):
     ''' Calculate the bearing between two GPS coordinates
         Equations from: http://www.movable-type.co.uk/scripts/latlong.html
         Input arguments:
@@ -194,6 +240,7 @@ def calculate_bearing(self,position1, position2):
         Modified:
         *
         '''
+    
     global bearing
     lat1 = math.radians(position1[0])
     long1 = math.radians(position1[1])
@@ -206,7 +253,7 @@ def calculate_bearing(self,position1, position2):
     
     return bearing
 
-def bearing_difference(finish_point, past, present):
+def bearing_difference(finish, previous, current):
     """
         This function take two points and determines the bearing between them,
         then determines how far to turn the right wheel to correct for the
@@ -217,11 +264,10 @@ def bearing_difference(finish_point, past, present):
     global turn_direction
     global current_heading
     global desired_heading
-
-    finish_point = finish_point
-    current_heading = calculate_bearing(past, present)
-    desired_heading = calculate_bearing(present, finish_point)
-    course_error = desired_heading - current_heading
+    
+    current_heading = calculate_bearing(previous, current)
+    desired_heading = calculate_bearing(previous, finish)
+    course_error = int(desired_heading - current_heading)
     
     # Correct for heading 'wrap around' to find shortest turn
     
@@ -236,6 +282,7 @@ def bearing_difference(finish_point, past, present):
         turn_direction = -1  # Turn left
     else:
         turn_direction = 0  # Stay straight
+        
         return course_error, turn_direction, current_heading, desired_heading
 
 ########## End GPS Related Functions ###########################
@@ -276,18 +323,17 @@ def turn_right(speed):
     motorA.start(speed,'CCW')
     motorB.start(speed,'CCW')
 
-def calculate_ang_velocity(encoder_timer)
-'''Uses data from associated encoder calculates difference in count over a sample time to output the angular velocity of the motor. 
-    Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017'''
-    encoder_timer = encoder_timer
-    cpr =2249 # Counts per revolution based on specifications and gear ratio of motor
+def calculate_ang_velocity(encoder_timer):
+    '''Uses data from associated encoder calculates difference in count over a sample time to output the angular velocity of the motor. 
+        Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017'''
+    cpr = 2256 # Counts per revolution based on specifications and gear ratio of motor
     start = pyb.millis() # Begin sample time
-    initial_count = encoder_timer.count() # Grabbing initial count of encoder
-    sample_time = pyb.delay(50) # Delay small but significant for sample time
+    initial_count = encoder_timer.counter() # Grabbing initial count of encoder
+    sample_time = pyb.delay(10) # Delay small but significant for sample time
     '''Since the  maximum rps is 3.5 with 2249 cpr that equates to 7.87 counts per ms maximum allowing for 50ms to be sufficient'''
     
     # velocity in counts per second
-    ang_velocity_cps = 1000*abs(encoder_timer.count()-initial_count)/(pyb.elapsed_millis(start))
+    ang_velocity_cps = 1000*(abs(encoder_timer.counter()-initial_count))/(pyb.elapsed_millis(start))
     
     #velocity in revolutions per second
     ang_velocity_revps = ang_velocity_cps/cpr
@@ -302,49 +348,46 @@ def cruise_control(duration, speed):
     # Maximum possible revolution per second of motor = 3.5 [210rpm]
     
     run_time = pyb.millis() # Start timer for the run time of the cruise control
-    duration = self.duration # Desired duration of the cruise control [ms]
-    speed = self.speed # Desired speed, value of PWM
+    # Duration: Desired duration of the cruise control [ms]
+    # Speed: Desired speed, value of PWM
     
-    desired_velocity = arduino_map(speed, 0, 100, 0, 3.5) #Mapping desired PWM to angular velocity
+    desired_velocity = arduino_map(speed, 0, 100, 0, 3) #Mapping desired PWM to angular velocity
     
     # PID values [NEEDS TUNING!!!!!]
-    kp_motor = 1
-    ki_motor = 0
-    kd_motor = 0
+    kp_motor = 1.5
+    ki_motor = 0.003
+    kd_motor = 2
     
     # Creating PID object for each encoder
-    A_pid = PID(kp_motor, ki_motor, kd_motor, 100000, 3.5, -3.5)
-    B_pid = PID(kp_motor, ki_motor, kd_motor, 100000, 3.5, -3.5)
+    A_pid = PID(kp_motor, ki_motor, kd_motor, 100000, 3, 0)
+    B_pid = PID(kp_motor, ki_motor, kd_motor, 100000, 3, 0)
     
     while True:
-        #Starting motors at the desired PWM
-        motorA.start(speed,'ccw')
-        motorB.start(speed,'cw')
-        
         #Calculating actual angular velocity
         A_velocity = calculate_ang_velocity(enc_timer_A)
         B_velocity = calculate_ang_velocity(enc_timer_B)
         
         # Computing error of desired vs. actual
-        A_correction_= A_pid.compute_output(desired_velocity, A_velocity)
+        
+        A_correction= A_pid.compute_output(desired_velocity, A_velocity)
         
         #Mapping correction to the appropriate PWM
-        conversion_A = arduino_map(A_correction, 0, 3.5, 0, 100)
-        motorA.set_speed(conversion_A)
+        conversion_A = arduino_map(A_correction, 0, 3, 0, 100)
+        motorA.set_speed(abs(int(conversion_A)))
         
         # Computing error of desired vs. actual
-        B_correction_= B_pid.compute_output(desired_velocity, B_velocity)
+        B_correction= B_pid.compute_output(desired_velocity, B_velocity)
         
         #Mapping correction to the appropriate PWM
-        conversion_B = arduino_map(B_correction, 0, 3.5, 0, 100)
-        motorB.set_speed(conversion_B)
+        conversion_B = arduino_map(abs(B_correction), 0, 3, 0, 100)
+        motorB.set_speed(abs(int(conversion_B)))
         
         if pyb.elapsed_millis(run_time) > duration: # Condition to end function
-            motorA.stop()
-            motorB.stop()
+            motorA.set_speed(0)
+            motorB.set_speed(0)
             break
 
-def correct_course_error(gain):
+def correct_course_error(gain, finish , previous , current):
     """
         This function takes the angle and issues a timed command to one motor to
         rotate the rover to a specific angle. Angle must be in degrees; Direction is
@@ -352,31 +395,32 @@ def correct_course_error(gain):
         Gain is used to tweak values to compensate for inertial effects [gain>0]
         Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017
         """
-    
+    global course_error
+    global turn_direction
     global wheel_separation
     global wheel_radius
-    global turn_direction
-    global course_error
+    bearing_difference(finish,previous,current)
     angle = math.radians(course_error)
+    
     speed = 40 # This PWM speed is approximately 1 revolution per second can be perfected with gain changes
     number_of_revolutions = (wheel_separation * angle) / (2 * math.pi * wheel_radius)
- 
+    
     one_rev_time = 1
     # work with the gain to make the rover turn correctly
-    time_to_rotate = (number_of_revolutions * one_rev_time) * gain * 1000 # Multiply by 1000 to put in milliseconds
+    time_to_rotate = int(abs((number_of_revolutions * one_rev_time) * gain * 1000 ))# Multiply by 1000 to put in milliseconds
+    print(time_to_rotate)
     
     # This is a right turn.
     if turn_direction == 1:
         motorA.start(speed, 'CCW')
-        pyb.delay(abs(time_to_rotate))
-        motorA.stop()
+        pyb.delay(time_to_rotate)
+        motorA.set_speed(0)
+    
     # This is a left turn
     elif turn_direction ==-1:
         motorB.start(speed, 'CW')
-        pyb.delay(abs(time_to_rotate))
-        motorB.stop()
-    else:
-        continue
+        pyb.delay(time_to_rotate)
+        motorB.set_speed(0)
 
 def turn_degree(angle,direction,gain):
     

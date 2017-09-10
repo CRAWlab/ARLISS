@@ -102,23 +102,10 @@ xbee.write('\ntarget point: {}'.format(finish_point)) # Sending Target Point
 pyb.delay(load_up_time) # This load up time accounts for the entire process leading up to launch
 
 # Begin descent and monitor altitude
-while True:
-    # Update the GPS Object when flag is tripped
-    if new_data:
-        while my_gps_uart.any():
-            my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
-        current_altitude = my_gps.altitude # Grabbing parameter designated by micropyGPS object
-        if current_altitude != 0:
-            continue
-        pyb.delay(1000)
-        new_data = False  # Clear the flag
-        with open('/sd/log.txt', 'a') as log:
-            log.write('{}\n'.format(current_altitude))
-        if current_altitude < black_rock_alt_m + alt_threshold:
-            xbee.write('Rover has landed beginning parachute burning')
-            with open('/sd/log.txt', 'a') as log:
-            log.write('I have landed with altitude: {}\n'.format(current_altitude))# Sending Target Point
-            break
+altitude = functions.monitor_descent()
+with open('/sd/log.txt', 'a') as log:
+    log.write('I have landed with altitude: {}\n'.format(altitude))
+xbee.write('Rover has landed beginning parachute burning')
 
 
 # Wait some time to let things settle
@@ -127,9 +114,9 @@ pyb.delay(settling_time)
 # Burn Parachute and move for 10s
 functions.burn_parachute(burn_time)
 
-
-functions.cruise_control(10000,80) # Duration 10s, 80% duty cycle
-functions.stop()
+functions.move_forward(80)
+cruise_speed = 80
+functions.cruise_control(10000,cruise_speed) # Duration 10s, 80% duty cycle
 xbee.write('Parachute burned successfully....Aquiring Location')
 with open('/sd/log.txt', 'a') as log:
     log.write('Parachute successfully burned\n')
@@ -137,70 +124,39 @@ with open('/sd/log.txt', 'a') as log:
 ############ Establish Landing / Aquire Bearing / Correct course ########
 
 # Establish Landing Point
-while True:
-    xbee.write('Aquiring Location...')
-    if new_data:
-        while my_gps_uart.any():
-            my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
-        
-        landing_lat = functions.convert_latitude(my_gps.latitude) # Grabbing parameter designated by micropyGPS object
-        landing_lon = functions.convert_longitude(my_gps.longitude) # Grabbing parameter designated by micropyGPS object
-        landing_point = (landing_lat, landing_lon) # Creating single variable for utilization in calculations
-        
-        # Using single part of landing point if one isnt equal to zero chances are neither is the other
-        if landing_lat != 0:
-            continue
-        #Sending update via xbee
-        xbee.write('Location aquired')
-        xbee.write('\nLanding point: {}'.format(landing_point))
-       
-       #Appending log
-        with open('/sd/log.txt', 'a') as log:
-            log.write('{}\n'.format(landing_point))
-        new_data = False  # Clear the flag
-        break
-        #Using single part of landing point if one isnt equal to zero chances are neither is the other
-
-
+bee.write('Aquiring Location...')
+landing_point = functions.get_location
+xbee.write('Location aquired\n')
+xbee.write('Landing point: {}\n'.format(landing_point))
+with open('/sd/log.txt', 'a') as log:
+    log.write('{}\n'.format(landing_point))
 
 # Calculate Distance to goal
 dist_from_goal = functions.calculate_distance(finish_point, landing_point)
 
 
 xbee.write('\nDistance from Goal: {}'.format(dist_from_goal))
+
 with open('/sd/log.txt', 'a') as log:
     log.write('Distance from goal: {}\n'.format(dist_from_goal))
 
-
+functions.move_forward(80)
+cruise_speed = 80
+functions.cruise_control(10000,cruise_speed) # Duration 10s, 80% duty cycle
 # Establish an arbitrary point after landing point to aquire bearing
-while True:
-    '''Using Cruise control to drive straight
-        Duration = 10 seconds
-        Desired_speed = 80% duty cycle
-        '''
-    functions.cruise_control(10000,80)
-    
-    if new_data:
-        while my_gps_uart.any():
-            my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
-        arb_lat = functions.convert_latitude(my_gps.latitude) # Grabbing parameter designated by micropyGPS object
-        arb_lon = functions.convert_longitude(my_gps.longitude) # Grabbing parameter designated by micropyGPS object
-        arbitrary_point = (arb_lat, arb_lon) # Creating single variable for utilization in calculations
-        if landing_point[0] != 0:
-            continue
-        
-        with open('/sd/log.txt', 'a') as log:
-            log.write('Point to establish bearing aquired: {}\n'.format(arbitrary_point))
-        new_data = False
-        break
+arbitrary_point = functions.get_location()
+with open('/sd/log.txt', 'a') as log:
+    log.write('Point to establish bearing aquired: {}\n'.format(arbitrary_point))
 
 # Now that 3 points have been established we can establish bearing and correct course
-functions.bearing_difference(finish_point,landing_point, arbitrary_point)
 course_error_gain = 0.5
 # Notifying course is changing
+functions.correct_course_error(course_error_gain, finish_point,landing_point,arbitrary_point)
 xbee.write('Bearing calculated, correcting course')
-functions.correct_course_error(course_error_gain)
+
 distance_to_goal = functions.calculate_distance(arbitrary_point,finish_point)
+with open('/sd/log.txt', 'a') as log:
+    log.write('Distance from goal: {}\n'.format(dist_from_goal))
 
 #################### Begin Navigation Loop ##################
 '''The navigation loop will behave as follows:
@@ -214,37 +170,35 @@ distance_to_goal = functions.calculate_distance(arbitrary_point,finish_point)
         -Yes: Stop, break loop
         -No: Preform another iteration
     '''
-previous_point = arbitrary_point
+current_point = arbitrary_point
 current_dist = distance_to_goal
-with open('/sd/log.txt', 'a') as log:
-    log.write('Distance to Goal: {}\n'.format(current_dist))
-
 travel_time = 20000
 
 while True:
     previous_dist = current_dist
     previous_point = current_point
 # Travel for time interval
-    functions.cruise_control(travel_time,80)
+    functions.move_forward(80)
+    cruise_speed = 80
+    functions.cruise_control(travel_time,cruise_speed)
     
 # Record Location
     xbee.write('Aquiring Location.....')
-    if new_data:
-        while my_gps_uart.any():
-            my_gps.update(chr(my_gps_uart.readchar()))
-        current_lat = functions.convert_latitude(my_gps.latitude)
-        current_lon = functions.convert_longitude(my_gps.longitude)
-        current_point = (current_lat, current_lon)
-        xbee.write('Location Aquired.... Calculating Distance to goal')
-        with open('/sd/log.txt', 'a') as log:
-            log.write('Location: {}\n'.format(current_point))
-        new_data = False
-        continue
+    current_point = functions.get_location()
+        
+    xbee.write('Location Aquired.... Calculating Distance to goal')
+    with open('/sd/log.txt', 'a') as log:
+        log.write('Location: {}\n'.format(current_point))
+
 # Calculate distance / correct course
     current_dist = functions.calculate_distance(current_point,finish_point)
-    functions.correct_course_error(course_error_gain)
+    functions.correct_course_error(course_error_gain,finish_point,previous_point,current_point)
+
     with open('/sd/log.txt', 'a') as log:
         log.write('Distance to Goal: {}\n'.format(current_dist))
+
+    pyb.delay(5000)
+
 # If current distance < previous distance increase travel time
     if current_dist < previous_dist:
         xbee.write('Distance decreased increasing travel time')
