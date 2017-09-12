@@ -35,7 +35,7 @@ from pyb import ExtInt
 ################### Goal Coordinate Input #####################
 # Coordinate given to team by ARLISS Coordinators:
 
-finish_point=(30.2107,-92.0209)
+finish_point=( )
 
 ####################### End Input #############################
 
@@ -180,16 +180,16 @@ while True:
     pyb.delay(5000)
 
 # If current distance < previous distance increase travel time
-    if current_dist < previous_dist:
+    if abs(int(current_dist)) < abs(int(previous_dist)):
         xbee.write('Distance decreased increasing travel time')
         travel_time += 10000
 # If current distance > previous distance decrease travel time
-    elif current_dist > previous_dist:
+    elif abs(int(current_dist)) > abs(int(previous_dist)):
         xbee.write('Distance increased decreasing travel time')
         travel_time -= 10000
 
 # Getting close to goal slow down
-    elif current_dist < 20:
+    elif abs(int(current_dist)) < 20:
         xbee.write('Getting close to goal decreasing travel time')
         travel_time -= 10000
         
@@ -201,7 +201,7 @@ while True:
                 
 # Goal Reached?????
 # Yes!
-    if distance_to_goal < distance_tolerance:
+    if abs(int(distance_to_goal)) < distance_tolerance:
         functions.stop()
         break
 # No :( preform another iteration
