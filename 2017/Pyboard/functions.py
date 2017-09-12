@@ -17,7 +17,7 @@ from micropyGPS import MicropyGPS
 from motor import motor
 from pyboard_PID import PID
 import math
-
+from pyb import ExtInt
 ################## Peripherial Setup ######################
 
 ########### Sparkfun Razor IMU set up ##
@@ -40,6 +40,7 @@ my_gps_uart = UART(3,9600,read_buf_len=1000)
 # Instantiate the micropyGPS object
 # Changing Local offset to Blackrock time -7
 my_gps = MicropyGPS()
+
 
 ########### Quadrature encoder set up ##############
 # Pin(Board Pin, Alternate function, Pull up resistor enabled, changing Alternate function to use for encoder channel)
@@ -90,7 +91,7 @@ direction_names = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S",
 
 directions_num = len(direction_names)
 directions_step = 360 / directions_num
-distance = 0.0
+distance = 0
 
 bearing = 0
 course_error = 0
@@ -102,7 +103,7 @@ desired_heading = 0
 wheel_separation = 5.275 # Separation of tracks [inches]
 wheel_radius =0.875 # radius of tracks [inches]
 gain = 0.75 # adjustable value to account for inertial effects
-
+course_error_gain = 2
 
 ################### Defining Functions ####################
 
@@ -122,6 +123,7 @@ def burn_parachute(burn_time):
 
 ########## GPS Related Functions ###########################
 new_data = False
+
 def pps_callback(line):
     '''The Adafruit GPS has a PPS pin that changes from high to low only when we are recieving data
         we will use this to our advantage by associating it with an iterrupt to change indicate we are recieving new data'''
@@ -129,45 +131,32 @@ def pps_callback(line):
     global new_data # Use Global to trigger update
     new_data = True # Raise flag
 
-my_gps = functions.my_gps
-my_gps_uart = functions.my_gps_uart
 
 # Create an external interrupt on pin X8
 pps_pin = pyb.Pin.board.X8
 extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
+extint.disable()
 
 def monitor_descent():
-    while True:
-    # Update the GPS Object when flag is tripped
-    if new_data:
-        while my_gps_uart.any():
-            my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
-        current_altitude = my_gps.altitude # Grabbing parameter designated by micropyGPS object
-        if int(current_altitude) != 0:
-            continue
-        
-        if int(current_altitude) < black_rock_alt_m + alt_threshold:
-            new_data = False #clear flag
-            break
-    return current_altitude
-
-def get_location():
+    extint.enable()
+    global new_data
     while 1:
+    # Update the GPS Object when flag is tripped
         if new_data:
             while my_gps_uart.any():
                 my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
-            lat = my_gps.latitude
-            lon = my_gps.longitude
-            converted_lat = convert_latitude(lat) # Grabbing parameter designated by micropyGPS object
-            converted_lon = convert_longitude(lon) # Grabbing parameter designated by micropyGPS object
-            point = (converted_lat, converted_lon) # Creating single variable for utilization in calculations
-            pyb.delay(3000)
+            current_altitude = my_gps.altitude # Grabbing parameter designated by micropyGPS object
+            if int(current_altitude) != 0:
+                continue
         
-            if int(start_lat) != 0:
-                location = point
-                new_data = False
+            if int(current_altitude) < black_rock_alt_m + alt_threshold:
+                new_data = False #clear flag
                 break
-    return location
+    extint.disable()
+    return current_altitude
+
+
+
 def convert_latitude(lat_NS):
     """ Function to convert deg m N/S latitude to DD.dddd (decimal degrees)
         Arguments:
@@ -191,6 +180,29 @@ def convert_longitude(long_EW):
         """
     
     return (long_EW[0] + long_EW[1] / 60) * (1.0 if long_EW[2] == 'E' else -1.0)
+
+def get_location():
+    extint.enable()
+    global new_data
+    
+    while 1:
+        if new_data:
+            while my_gps_uart.any():
+                my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
+            
+            lat = my_gps.latitude
+            lon = my_gps.longitude
+            converted_lat = convert_latitude(lat) # Grabbing parameter designated by micropyGPS object
+            converted_lon = convert_longitude(lon) # Grabbing parameter designated by micropyGPS object
+            point = (converted_lat, converted_lon) # Creating single variable for utilization in calculations
+            pyb.delay(3000)
+            
+            if int(converted_lat) != 0:
+                location = point
+                new_data = False
+                break
+    extint.disable()
+    return location
 
 def calculate_distance(position1, position2):
     ''' Calculate the distance between two lat/long coords using simple
@@ -226,7 +238,7 @@ def calculate_distance(position1, position2):
     
     x = dLon * math.cos((lat1+lat2)/2)
     distance = math.sqrt(x**2 + dLat**2) * EARTH_RADIUS
-    return int(distance)
+    return distance
 
 def calculate_bearing(position1, position2):
     ''' Calculate the bearing between two GPS coordinates
@@ -290,14 +302,14 @@ def bearing_difference(finish, previous, current):
 ################# Motor / Encoder Related Functions ###################
 def move_forward(speed):
     #Move both wheels at same speed in opposites direction to move forward
-    motorA.start(speed, 'CCW')
-    motorB.start(speed, 'CW')
+    motorA.start(speed, 'ccw')
+    motorB.start(speed, 'cw')
 
 def move_backward(speed):
     
     #Move both wheels at same speed in sopposite directions to move backward
-    motorA.start(speed, 'CW')
-    motorB.start(speed, 'CCW')
+    motorA.start(speed, 'cw')
+    motorB.start(speed, 'ccw')
 
 def speed_change(speed):
     
@@ -315,13 +327,13 @@ def hard_stop():
 
 def turn_left(speed):
     # Open loop turning used for quick turning or where precision is irrelevant
-    motorA.start(speed,'CW')
-    motorB.start(speed,'CW')
+    motorA.start(speed,'cw ')
+    motorB.start(speed,'cw')
 
 def turn_right(speed):
     # Open loop turning used for quick turning or where precision is irrelevant
-    motorA.start(speed,'CCW')
-    motorB.start(speed,'CCW')
+    motorA.start(speed,'ccw')
+    motorB.start(speed,'ccw')
 
 def calculate_ang_velocity(encoder_timer):
     '''Uses data from associated encoder calculates difference in count over a sample time to output the angular velocity of the motor. 
@@ -368,18 +380,15 @@ def cruise_control(duration, speed):
         B_velocity = calculate_ang_velocity(enc_timer_B)
         
         # Computing error of desired vs. actual
-        
         A_correction= A_pid.compute_output(desired_velocity, A_velocity)
-        
-        #Mapping correction to the appropriate PWM
-        conversion_A = arduino_map(A_correction, 0, 3, 0, 100)
-        motorA.set_speed(abs(int(conversion_A)))
-        
-        # Computing error of desired vs. actual
         B_correction= B_pid.compute_output(desired_velocity, B_velocity)
         
         #Mapping correction to the appropriate PWM
+        conversion_A = arduino_map(A_correction, 0, 3, 0, 100)
         conversion_B = arduino_map(abs(B_correction), 0, 3, 0, 100)
+        
+        # Changing speed of motors to correction
+        motorA.set_speed(abs(int(conversion_A)))
         motorB.set_speed(abs(int(conversion_B)))
         
         if pyb.elapsed_millis(run_time) > duration: # Condition to end function
@@ -387,7 +396,7 @@ def cruise_control(duration, speed):
             motorB.set_speed(0)
             break
 
-def correct_course_error(gain, finish , previous , current):
+def correct_course_error(finish , previous , current):
     """
         This function takes the angle and issues a timed command to one motor to
         rotate the rover to a specific angle. Angle must be in degrees; Direction is
@@ -399,6 +408,8 @@ def correct_course_error(gain, finish , previous , current):
     global turn_direction
     global wheel_separation
     global wheel_radius
+    global course_error_gain
+    
     bearing_difference(finish,previous,current)
     angle = math.radians(course_error)
     
@@ -412,13 +423,13 @@ def correct_course_error(gain, finish , previous , current):
     
     # This is a right turn.
     if turn_direction == 1:
-        motorA.start(speed, 'CCW')
+        motorA.start(speed, 'ccw')
         pyb.delay(time_to_rotate)
         motorA.set_speed(0)
     
     # This is a left turn
     elif turn_direction ==-1:
-        motorB.start(speed, 'CW')
+        motorB.start(speed, 'cw')
         pyb.delay(time_to_rotate)
         motorB.set_speed(0)
 

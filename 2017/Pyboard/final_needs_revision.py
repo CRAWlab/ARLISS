@@ -52,27 +52,6 @@ new_data = False # Global Flag to Start GPS data Processing
 
 ################### End Global Variables ######################
 
-
-################### GPS / Interrupt setup #####################
-
-'''The Adafruit GPS has a PPS pin that changes from high to low only when we are recieving data
-    we will use this to our advantage by associating it with an iterrupt to change indicate we are recieving new data'''
-def pps_callback(line):
-    '''The Adafruit GPS has a PPS pin that changes from high to low only when we are recieving data
-        we will use this to our advantage by associating it with an iterrupt to change indicate we are recieving new data'''
-    global new_data # Use Global to trigger update
-    new_data = True # Raise flag
-
-# Create an external interrupt on pin X8
-pps_pin = pyb.Pin.board.X8
-extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
-
-# Grabbing GPS uart and associated object from 'functions.py'
-my_gps_uart = functions.my_gps_uart
-my_gps = functions.my_gps
-
-################### End GPS / Interrupt setup #################
-
 # Grabbing the Xbee object created in functions.py
 xbee = functions.xbee
 
@@ -105,6 +84,7 @@ pyb.delay(load_up_time) # This load up time accounts for the entire process lead
 altitude = functions.monitor_descent()
 with open('/sd/log.txt', 'a') as log:
     log.write('I have landed with altitude: {}\n'.format(altitude))
+
 xbee.write('Rover has landed beginning parachute burning')
 
 
@@ -124,7 +104,7 @@ with open('/sd/log.txt', 'a') as log:
 ############ Establish Landing / Aquire Bearing / Correct course ########
 
 # Establish Landing Point
-bee.write('Aquiring Location...')
+xbee.write('Aquiring Location...')
 landing_point = functions.get_location
 xbee.write('Location aquired\n')
 xbee.write('Landing point: {}\n'.format(landing_point))
