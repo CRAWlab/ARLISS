@@ -1,11 +1,18 @@
-#!/bin/sh
+'''functions.py 
+    ARLISS 2017
+    This file provides general functionality for the Tank type rover
+    Created: 08/28/2017
+    Created by: Joseph Fuentes -jaf1036@louisiana.edu
+    
+    Must include the following files for full functionality of code
+    'pyboard_razor_IMU.py'
+    'micropyGPS.py'
+    'motor.py'
+    'pyboard_PID.py'
+    
+    
 
-#  functions.py
-#  
-#
-#  Created by Joseph Fuentes on 8/28/17.
-#
-
+'''
 #################### Import Libraries#######################
 import pyb
 import machine
@@ -18,6 +25,7 @@ from motor import motor
 from pyboard_PID import PID
 import math
 from pyb import ExtInt
+
 ################## Peripherial Setup ######################
 
 ########### Sparkfun Razor IMU set up ##
@@ -85,6 +93,8 @@ relay = Pin('Y11', Pin.OUT_PP)
 EARTH_RADIUS = 6370000
 MAG_LAT = 82.7
 MAG_LON = -114.4
+black_rock_alt_m = 1191 # Altitude of black rock [meters]
+alt_threshold = 1 # Allowable threshold that rover is able to accept as safe altitude
 
 direction_names = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S",
                    "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
@@ -135,11 +145,13 @@ def pps_callback(line):
 # Create an external interrupt on pin X8
 pps_pin = pyb.Pin.board.X8
 extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
-extint.disable()
+extint.disable() # Disabling interrupt so other high process functions can operate correctly without interrupt
 
 def monitor_descent():
-    extint.enable()
+    extint.enable() # Activating interuppt so new data from GPS can be processed
     global new_data
+    global black_rock_alt_m
+    global alt_threshold
     while 1:
     # Update the GPS Object when flag is tripped
         if new_data:
@@ -152,7 +164,8 @@ def monitor_descent():
             if int(current_altitude) < black_rock_alt_m + alt_threshold:
                 new_data = False #clear flag
                 break
-    extint.disable()
+    extint.disable()  # Disabling interrupt so other high process functions can operate correctly without interrupt
+    
     return current_altitude
 
 
@@ -182,7 +195,8 @@ def convert_longitude(long_EW):
     return (long_EW[0] + long_EW[1] / 60) * (1.0 if long_EW[2] == 'E' else -1.0)
 
 def get_location():
-    extint.enable()
+    
+    extint.enable() # Activating interuppt so new data from GPS can be processed
     global new_data
     
     while 1:
@@ -192,16 +206,16 @@ def get_location():
             
             lat = my_gps.latitude
             lon = my_gps.longitude
-            converted_lat = convert_latitude(lat) # Grabbing parameter designated by micropyGPS object
-            converted_lon = convert_longitude(lon) # Grabbing parameter designated by micropyGPS object
+            converted_lat = convert_latitude(lat) # Converting Lat (dd.mmss)
+            converted_lon = convert_longitude(lon) # Converting Lon (dd.mmss
             point = (converted_lat, converted_lon) # Creating single variable for utilization in calculations
             pyb.delay(3000)
             
-            if int(converted_lat) != 0:
+            if int(converted_lat) != 0: # Since converted lat is still in a string it needs to be converted to a integer for comparison
                 location = point
                 new_data = False
                 break
-    extint.disable()
+    extint.disable()  # Disabling interrupt so other high process functions can operate correctly without interrupt
     return location
 
 def calculate_distance(position1, position2):
@@ -312,7 +326,6 @@ def move_backward(speed):
     motorB.start(speed, 'ccw')
 
 def speed_change(speed):
-    
     # Change Speed to desired PWM
     motorA.set_speed(speed)
     motorB.set_speed(speed)
