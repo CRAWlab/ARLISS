@@ -44,12 +44,13 @@ finish_point=( )
 burn_time = 5000 # Time it takes to Burn Nychron wire completely [ms]
 load_up_time_mins = 45 # mins it takes to load into rocket
 load_up_time = load_up_time_mins * 60 * 1000 # Time it takes to load up fully into rocket [ms]
+force_start_timer = 90*1000*60
 settling_time = 30000 # 30s settling time after rover has landed
 black_rock_alt_m = 1191 # Altitude of black rock [meters]
 alt_threshold = 1 # Allowable threshold altitude between GPS data and estimated Altitude
 distance_tolerance = 3 # Allowable distance between goal and rover location [meters]
 new_data = False # Global Flag to Start GPS data Processing
-
+stuck_tolerance = 1
 ################### End Global Variables ######################
 
 # Grabbing the Xbee object created in functions.py
@@ -81,9 +82,10 @@ xbee.write('\ntarget point: {}'.format(finish_point)) # Sending Target Point
 pyb.delay(load_up_time) # This load up time accounts for the entire process leading up to launch
 
 # Begin descent and monitor altitude
-altitude = functions.monitor_descent()
+altitude = functions.monitor_descent() # Add condition
 with open('/sd/log.txt', 'a') as log:
     log.write('I have landed with altitude: {}\n'.format(altitude))
+
 
 xbee.write('Rover has landed beginning parachute burning')
 
@@ -105,7 +107,7 @@ with open('/sd/log.txt', 'a') as log:
 
 # Establish Landing Point
 xbee.write('Aquiring Location...')
-landing_point = functions.get_location
+landing_point = int(functions.get_location)
 xbee.write('Location aquired\n')
 xbee.write('Landing point: {}\n'.format(landing_point))
 with open('/sd/log.txt', 'a') as log:
@@ -124,17 +126,17 @@ functions.move_forward(80)
 cruise_speed = 80
 functions.cruise_control(10000,cruise_speed) # Duration 10s, 80% duty cycle
 # Establish an arbitrary point after landing point to aquire bearing
-arbitrary_point = functions.get_location()
+bearing_point = int(functions.get_location())
 with open('/sd/log.txt', 'a') as log:
-    log.write('Point to establish bearing aquired: {}\n'.format(arbitrary_point))
+    log.write('Point to establish bearing aquired: {}\n'.format(bearing_point))
 
 # Now that 3 points have been established we can establish bearing and correct course
 course_error_gain = 0.5
 # Notifying course is changing
-functions.correct_course_error(course_error_gain, finish_point,landing_point,arbitrary_point)
+functions.correct_course_error(course_error_gain, finish_point,landing_point,bearing_point)
 xbee.write('Bearing calculated, correcting course')
 
-distance_to_goal = functions.calculate_distance(arbitrary_point,finish_point)
+distance_to_goal = functions.calculate_distance(bearing_point,finish_point)
 with open('/sd/log.txt', 'a') as log:
     log.write('Distance from goal: {}\n'.format(dist_from_goal))
 
@@ -150,9 +152,9 @@ with open('/sd/log.txt', 'a') as log:
         -Yes: Stop, break loop
         -No: Preform another iteration
     '''
-current_point = arbitrary_point
+current_point = int(bearing_point)
 current_dist = distance_to_goal
-travel_time = 20000
+travel_time = 20000 # Adjust value
 
 while True:
     previous_dist = current_dist
@@ -171,37 +173,20 @@ while True:
         log.write('Location: {}\n'.format(current_point))
 
 # Calculate distance / correct course
-    current_dist = functions.calculate_distance(current_point,finish_point)
+    current_dist = int(functions.calculate_distance(current_point,finish_point))
     functions.correct_course_error(course_error_gain,finish_point,previous_point,current_point)
 
     with open('/sd/log.txt', 'a') as log:
         log.write('Distance to Goal: {}\n'.format(current_dist))
 
     pyb.delay(5000)
+    if ((current_dist-previous_dist)^2) < (stuck_tolerance^2):
+        functions.stuck()
 
-# If current distance < previous distance increase travel time
-    if abs(int(current_dist)) < abs(int(previous_dist)):
-        xbee.write('Distance decreased increasing travel time')
-        travel_time += 10000
-# If current distance > previous distance decrease travel time
-    elif abs(int(current_dist)) > abs(int(previous_dist)):
-        xbee.write('Distance increased decreasing travel time')
-        travel_time -= 10000
 
-# Getting close to goal slow down
-    elif abs(int(current_dist)) < 20:
-        xbee.write('Getting close to goal decreasing travel time')
-        travel_time -= 10000
-        
-        # To prevent zeroing out travel time
-        if travel_time < 10000:
-            travel_time -= < 1000
-        elif travel_time == 0:
-            travel_time = 5000
-                
 # Goal Reached?????
 # Yes!
-    if abs(int(distance_to_goal)) < distance_tolerance:
+    elif abs(current_dist) < distance_tolerance:
         functions.stop()
         break
 # No :( preform another iteration

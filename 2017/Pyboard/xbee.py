@@ -9,7 +9,7 @@ import serial
 import time
 from xbee import XBee
 
-serial_port = serial.Serial('/dev/ttyUSB0', 9600)
+serial_port = serial.Serial('/dev/cu.usbserial-A900XU2F', 9600)
 
 def print_data(data):
     """
@@ -18,7 +18,7 @@ def print_data(data):
         only argument is the data contained within the
         frame.
         """
-    print data
+    print (data)
 
 xbee = XBee(serial_port, callback=print_data)
 

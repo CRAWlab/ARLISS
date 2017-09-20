@@ -47,7 +47,7 @@ xbee = UART(2, 115200)
 my_gps_uart = UART(3,9600,read_buf_len=1000)
 # Instantiate the micropyGPS object
 # Changing Local offset to Blackrock time -7
-my_gps = MicropyGPS()
+my_gps = MicropyGPS(-7)
 
 
 ########### Quadrature encoder set up ##############
@@ -88,7 +88,7 @@ relay = Pin('Y11', Pin.OUT_PP)
 ################## End Peripheral set up #####################
 
 ########### Global Variables ##############
-
+force_start_timer = 90*1000*60
 # Variables Relevant to GPS functionality
 EARTH_RADIUS = 6370000
 MAG_LAT = 82.7
@@ -147,25 +147,51 @@ pps_pin = pyb.Pin.board.X8
 extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
 extint.disable() # Disabling interrupt so other high process functions can operate correctly without interrupt
 
-def monitor_descent():
+def get_altitude():
     extint.enable() # Activating interuppt so new data from GPS can be processed
     global new_data
     global black_rock_alt_m
     global alt_threshold
     while 1:
-    # Update the GPS Object when flag is tripped
+        # Update the GPS Object when flag is tripped
         if new_data:
             while my_gps_uart.any():
                 my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
+            altitude = my_gps.altitude # Grabbing parameter designated by micropyGPS object
+
+            if int(altitude) != 0:
+                current_altitude = altitude
+                new_data = False #clear flag
+                break
+    extint.disable()  # Disabling interrupt so other high process functions can operate correctly without interrupt
+    return current_altitude
+def monitor_descent():
+    timer = pyb.millis()
+    extint.enable() # Activating interuppt so new data from GPS can be processed
+    global new_data
+    global black_rock_alt_m
+    global alt_threshold
+    global force_start_timer
+    while 1:
+        
+    # Update the GPS Object when flag is tripped
+        if new_data:
+            while my_gps_uart.any():
+            
+                my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
             current_altitude = my_gps.altitude # Grabbing parameter designated by micropyGPS object
+            pyb.delay(3000)
+            print(current_altitude)
             if int(current_altitude) != 0:
                 continue
         
             if int(current_altitude) < black_rock_alt_m + alt_threshold:
                 new_data = False #clear flag
                 break
-    extint.disable()  # Disabling interrupt so other high process functions can operate correctly without interrupt
-    
+      # Disabling interrupt so other high process functions can operate correctly without interrupt
+            elif elapsed_millis(timer) > force_start_timer :
+                break
+    extint.disable()
     return current_altitude
 
 
@@ -210,7 +236,7 @@ def get_location():
             converted_lon = convert_longitude(lon) # Converting Lon (dd.mmss
             point = (converted_lat, converted_lon) # Creating single variable for utilization in calculations
             pyb.delay(3000)
-            
+            print(point)
             if int(converted_lat) != 0: # Since converted lat is still in a string it needs to be converted to a integer for comparison
                 location = point
                 new_data = False
@@ -348,6 +374,13 @@ def turn_right(speed):
     motorA.start(speed,'ccw')
     motorB.start(speed,'ccw')
 
+def stuck():
+    turn_degree(90, 'right', 2)
+    move_forward(100)
+    turn_degree(90, 'left', 2)
+    move_forward(100)
+    stop()
+
 def calculate_ang_velocity(encoder_timer):
     '''Uses data from associated encoder calculates difference in count over a sample time to output the angular velocity of the motor. 
         Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017'''
@@ -377,37 +410,57 @@ def cruise_control(duration, speed):
     # Speed: Desired speed, value of PWM
     
     desired_velocity = arduino_map(speed, 0, 100, 0, 3) #Mapping desired PWM to angular velocity
-    
-    # PID values [NEEDS TUNING!!!!!]
-    kp_motor = 1.5
-    ki_motor = 0.003
-    kd_motor = 2
+        # PID values [NEEDS TUNING!!!!!]
+    kp_motor = 1.0
+    ki_motor = 0
+    kd_motor = 1.2
     
     # Creating PID object for each encoder
-    A_pid = PID(kp_motor, ki_motor, kd_motor, 100000, 3, 0)
-    B_pid = PID(kp_motor, ki_motor, kd_motor, 100000, 3, 0)
+    A_pid = PID(kp_motor, ki_motor, kd_motor, 10000, 0.5, -0.5)
+    B_pid = PID(kp_motor, ki_motor, kd_motor, 10000, 0.5, -0.5)
     
     while True:
+        #print('Desired: {:.4f}'.format(desired_velocity))
         #Calculating actual angular velocity
         A_velocity = calculate_ang_velocity(enc_timer_A)
         B_velocity = calculate_ang_velocity(enc_timer_B)
         
+      #  print('A vel: {:.4f}'.format(A_velocity))
+     #   print('B vel: {:.4f}'.format(B_velocity))
         # Computing error of desired vs. actual
         A_correction= A_pid.compute_output(desired_velocity, A_velocity)
         B_correction= B_pid.compute_output(desired_velocity, B_velocity)
         
+        #print('A correction: {:.4f}'.format(A_correction))
+        #print('B correction: {:.4f}'.format(B_correction))
+        
+        corrected_velocity_A = desired_velocity + A_correction
+        corrected_velocity_B = desired_velocity + B_correction
+        #print('A corrected vel: {:.4f}'.format(corrected_velocity_A))
+        #print('B corrected vel: {:.4f}'.format(corrected_velocity_B))
+        
         #Mapping correction to the appropriate PWM
-        conversion_A = arduino_map(A_correction, 0, 3, 0, 100)
-        conversion_B = arduino_map(abs(B_correction), 0, 3, 0, 100)
-        
+        conversion_A = arduino_map(corrected_velocity_A, 0, 3, 0, 100)
+        conversion_B = arduino_map(corrected_velocity_B, 0, 3, 0, 100)
+        #print('A conversion: {:.4f}'.format(conversion_A))
+        #print('B conversion: {:.4f}'.format(conversion_B))
+        pyb.delay(10)
         # Changing speed of motors to correction
-        motorA.set_speed(abs(int(conversion_A)))
-        motorB.set_speed(abs(int(conversion_B)))
+        motorA.set_speed(speed + conversion_A)
+        motorB.set_speed(speed + conversion_B)
         
-        if pyb.elapsed_millis(run_time) > duration: # Condition to end function
-            motorA.set_speed(0)
-            motorB.set_speed(0)
-            break
+        with open('/sd/log.txt', 'a') as log:
+    		log.write('A vel: {:.4f}'.format(A_velocity))
+    		log.write('B vel: {:.4f}'.format(B_velocity))
+    		log.write('A correction: {:.4f}'.format(A_correction))
+    		log.write('B correction: {:.4f}'.format(B_correction))
+    		log.write('A conversion: {:.4f}'.format(conversion_A))
+    		log.write('B conversion: {:.4f}'.format(conversion_B))
+    		
+		if pyb.elapsed_millis(run_time) > duration: # Condition to end function
+			motorA.set_speed(0)
+			motorB.set_speed(0)
+			break
 
 def correct_course_error(finish , previous , current):
     """
@@ -465,17 +518,39 @@ def turn_degree(angle,direction,gain):
     time_to_rotate = (number_of_revolutions * one_rev_time) * gain * 1000 # Multiply by 1000 to put in milliseconds
     
     # This is a right turn.
-    if turn_direction == 'right':
-        motorA.start(speed, 'CCW')
-        pyb.delay(abs(time_to_rotate))
+    if turn_direction == 1:
+        motorA.start(speed, 'ccw')
+        pyb.delay(abs(int(time_to_rotate)))
         motorA.stop()
     # This is a left turn
-    elif turn_direction == 'left':
-        motorB.start(speed, 'CW')
-        pyb.delay(abs(time_to_rotate))
+    elif turn_direction == -1':
+        motorB.start(speed, 'cw')
+        pyb.delay(abs(int(time_to_rotate)))
         motorB.stop()
-
-
+def turn(angle,direction):
+    initial_read = razor_imu.get_one_frame()
+    initial_angle = abs(int(initial_read[0]))
+    sensitivity = 5
+    while True:
+        pyb.delay(100)
+        new_read = razor_imu.get_one_frame()
+        new_angle = int(new_read[0])
+        
+        if new_angle < 0:
+            new_angle+= 360
+        elif new_angle > 0:
+            continue
+        
+        if turn_direction == 1:
+            motorA.start(40, 'ccw')
+            if int(angle) > abs( (initial_angle - new_angle ) + sensitivity):
+            motorA.set_speed(0)
+            break
+        elif turn_direction == -1:
+            motorB.start(40, 'cw')
+            if int(angle) > abs( (initial_angle - new_angle ) + sensitivity):
+                motorB.set_speed(0)
+                break
 ################# End motor Related Functions ###################
 
 ################# IMU related Functions #########################
