@@ -14,7 +14,7 @@ from pyb import ExtInt
 
 ################## User Input #####################
 finish_point = (30.2107, -92.0209)
-distannce_tolerance = 3
+distance_tolerance = 3
 wheel_separation = 8
 wheel_radius = 2.71
 gain = 0.75
@@ -47,6 +47,7 @@ DIR_B = 'Y4'
 PWM_B = 'Y3'
 TIM_B = 10
 CHAN_B = 1
+motor_B = motor(PWM_B, DIR_B, TIM_B, CHAN_B)
 
 ############ PARACHUTE RELAY ##################
 #pin Y11
