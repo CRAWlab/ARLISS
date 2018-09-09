@@ -56,9 +56,13 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and new_data == 0:
     print(new_data)
     time.sleep_ms(500)
 while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
+    gps.update(chr(uart.readchar()))
     altitude_1 = my_gps.altitude
+    print(altitude_1)
     time.sleep_ms(3*1000)
+    gps.update(chr(uart.readchar()))
     altitude_2 = my_gps.altitude
+    print(altitude_2)
     change_in_altitude = altitude_2 - altitude_1
     print(change_in_altitude)
 
