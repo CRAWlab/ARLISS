@@ -3,28 +3,30 @@ from motor import motor
 import time
 import pyb
 import machine
-from pyb import pin
+from pyb import Pin
 from configurations import *
 from pyboard_razor_IMU import Razor
 from pyb import ExtInt
-import functions
+#import functions
 import math
 from micropyGPS import MicropyGPS
 
 ################## GLOBAL FLAG FOR GPS PROCESSING ###############
+
 new_data = False
 def pps_callback(line):
-    print('Updated GPS object...')
+    #print('Updated GPS Object...')
     global new_data
     new_data = True
-
+pps_pin = pyb.Pin.board.X5
+extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
 
 
 while True:
     trigger_Pin_Value = trigger_Pin.value()
     time.sleep_ms(50)
     print(trigger_Pin_Value)
-    if trigger_Pin_Value = 1:
+    if trigger_Pin_Value == 1:
         print('Ready for Launch!')
         red_LED.off()
         green_LED.on()
@@ -35,7 +37,8 @@ while True:
 
 start_time = pyb.millis()
 
-while pyb.elapsed_millis(start_time) < 60*1000*5:
+while pyb.elapsed_millis(start_time) < 5*60*1000:
+    time.sleep_ms(1000)
     #time delay on looking for gps coordinates
 
 
@@ -46,20 +49,20 @@ while pyb.elapsed_millis(start_time) < 60*1000*5:
 #from the impact
 #there is a time limit condition associated with it which, if exceeded,
 #will trigger the burn wire
+
 start_time = pyb.millis()
-valid_sentence_received = my_gps.update(chr(my_gps_uart.readchar()))
 
-while pyb.elapsed_millis(start_time) < 60*1000*90 or valid_sentence_received == 0:
-    valid_sentence_received = my_gps.update(chr(uart.readchar()))
-    time.sleep_ms(1000)
-
-while pyb.elapsed_millis(start_time) < 60*1000*90 or change_in_altitude < -5:
-    altitude_1 = my.gps.altitude
+while pyb.elapsed_millis(start_time) < 60*1000*90 and new_data == 0:
+    print(new_data)
+    time.sleep_ms(500)
+while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
+    altitude_1 = my_gps.altitude
     time.sleep_ms(3*1000)
-    altitude_2 = my.gps.altitude
+    altitude_2 = my_gps.altitude
     change_in_altitude = altitude_2 - altitude_1
+    print(change_in_altitude)
 
-while pyb.elapsed_millis(start_time) < 60*1000*90 or change_in_accel != [0,0,0]:
+while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_accel_abs > [2,2,2]:
     accel_x_1 = accel.x()
     accel_y_1 = accel.y()
     accel_z_1 = accel.z()
@@ -71,6 +74,8 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 or change_in_accel != [0,0,0]:
     change_in_accel_y = accel_y_2 - accel_y_1
     change_in_accel_z = accel_z_2 - accel_z_1
     change_in_accel = [change_in_accel_x, change_in_accel_y, change_in_accel_z]
+    change_in_accel_abs = [abs(x) for x in change_in_accel]
+    print(change_in_accel)
 
 functions.burn_parachute(10*1000)
 functions.move_forward(100)
@@ -137,8 +142,8 @@ while True:
     functions.angle_to_motor_turn(wheel_separation, wheel_radius, gain, degree_to_turn[0], degree_to_turn[1])
     time.sleep_ms(1000)
     past_point = present_point
-    elif dist_from_goal < distance_tolerance:
-        functions.stop()
-        break
-    else:
-        continue
+    #elif dist_from_goal < distance_tolerance:
+        #functions.stop()
+        #break
+    #else:
+        #continue

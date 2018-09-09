@@ -23,19 +23,6 @@ course_error_gain = 2
 
 
 ################### END USER INPUT ################
-# Global flag to Start GPS data processing
-new_data = False
-def pps_callback(line):
-    print('Updated GPS Object...')
-    global new_data
-    new_data = True
-
-########### EXTERNAL INTERRUPT ON PIN X5 #############
-'''The Adafruit GPS has a PPS pin that changes from high to low only when we are recieving data
-    we will use this to our advantage by associating it with an iterrupt to change indicate we are recieving new data see functions.py for pps_callback'''
-
-pps_pin = pyb.Pin.board.X5
-extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
 
 ###################### GPS SETUP ######################
 my_gps_uart = UART(6, 9600, read_buf_len=1000)
@@ -107,3 +94,7 @@ desired_heading = 0
 
 ############### PYBOARD ACCELEROMETER ####################
 accel = pyb.Accel()
+
+################ VARIABLES FOR WHILE LOOPS ################
+change_in_altitude = -100
+change_in_accel = [10,10,10]
