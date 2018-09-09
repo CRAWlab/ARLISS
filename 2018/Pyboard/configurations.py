@@ -86,7 +86,7 @@ razor_imu = Razor(3, 57600, read_buf_len = 1000)
 ################### GLOBAL VARIABLES #########################
 
 force_start_timer = 90*1000*60
-################# Variables for GPS ####################
+################# VARIABLE FOR GPS ####################
 EARTH_RADIUS = 6370000
 MAG_LAT = 82.7
 MAG_LON = -114.4
@@ -104,3 +104,6 @@ course_error = 0
 turn_direction = 0
 current_heading = 0
 desired_heading = 0
+
+############### PYBOARD ACCELEROMETER ####################
+accel = pyb.Accel()
