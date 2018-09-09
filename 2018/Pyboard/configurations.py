@@ -99,3 +99,5 @@ accel = pyb.Accel()
 ################ VARIABLES FOR WHILE LOOPS ################
 change_in_altitude = -100
 change_in_accel = [10,10,10]
+
+############# VARIABLES FOR DATA LOGGING ################

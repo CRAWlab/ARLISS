@@ -60,19 +60,35 @@ start_time = pyb.millis()
 while pyb.elapsed_millis(start_time) < 60*1000*90 and new_data == 0:
     print(new_data)
     time.sleep_ms(500)
+navigation_start_time = pyb.millis()
+log_sd = open('/sd/log/csv', 'w')
+log_sd.write('The first GPS instance is {}\n'.format(navigation_start_time)
 
+
+altitude_check = 1
 while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
+
     while my_gps_uart.any():
         gps.update(chr(uart.readchar()))
     altitude_1 = my_gps.altitude
-    print(altitude_1)
+
+    while altitude_check == 1:
+        log_sd.write('The first recorded altitude is {}\n').format(altitude_1)
+        log_sd.write('The first recorded latitude is {}\n').format(functions.convert_latitude(my_gps.latitude))
+        log_sd.write('The first recorded longitude is {}\n').format(functions.convert_longitude(my_gps.longitude))
+        altitude_check = altitude_check + 1
+        print(altitude_1)
     time.sleep_ms(3*1000)
+
     while my_gps_uart.any():
         gps.update(chr(uart.readchar()))
     altitude_2 = my_gps.altitude
     print(altitude_2)
     change_in_altitude = altitude_2 - altitude_1
     print(change_in_altitude)
+    log_sd.write('The change in altitude is {} at {}\n'.format(change_in_altitude, pyb.elasped_millis(navigation_start_time)))
+
+
 
 while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_accel_abs > [2,2,2]:
     accel_x_1 = accel.x()
@@ -128,6 +144,8 @@ orange_LED.on()
 time.sleep_ms(2*1000)
 orange_LED.off()
 
+
+################### MAIN NAVIGATION LOOP #########################
 while True:
     initial_point = past_point
     functions.move_forward(100)
@@ -157,6 +175,7 @@ while True:
         time.sleep_ms(1000)
         past_point = present_point
     elif dist_from_goal < distance_tolerance:
+        navigation_duration = pyb.elapsed_millis(navigation_start_time)
         functions.stop()
         break
     else:
