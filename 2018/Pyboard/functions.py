@@ -54,7 +54,7 @@ def pps_callback(line):
 
 
 # Create an external interrupt on pin X8
-pps_pin = pyb.Pin.board.X8
+pps_pin = pyb.Pin.board.X5
 extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
 extint.disable() # Disabling interrupt so other high process functions can operate correctly without interrupt
 
@@ -520,31 +520,31 @@ def imu_pid(self,duration,speed):
         pyb.delay(100)
         new_read = razor_imu.get_one_frame()
         new_angle = new_read[0]
+        if abs(new_angle-initial_angle) > sensitivity:
+            if abs(new_angle) > abs(initial_angle): #The tank is drifting right
+                angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
+                speed_correction= self.arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
+                current_speedA = motor_A.currentSpeed
+                current_speedB = motor_B.currentSpeed
+                motor_A.set_speed(current_speedA - speed_correction)
+                motor_B.set_speed(current_speedB + speed_correction)
+                continue
 
-        if abs(new_angle) > abs((initial_angle - sensitivity)): #The tank is drifting right
-            angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
-            speed_correction= self.arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
-            current_speedA = motor_A.currentSpeed
-            current_speedB = motor_B.currentSpeed
-            motor_A.set_speed(current_speedA - speed_correction)
-            motor_B.set_speed(current_speedB + speed_correction)
-            continue
+            elif abs(new_angle) < abs(initial_angle): #The tank is drifting left
+                angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
+                speed_correction = self.arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
+                current_speedA = motor_A.currentSpeed
+                current_speedB = motor_B.currentSpeed
+                motor_A.set_speed(current_speedA + speed_correction)
+                motor_B.set_speed(current_speedB - speed_correction)
+                continue
 
-        elif abs(new_angle) < abs((initial_angle - sensitivity)): #The tank is drifting left
-            angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
-            speed_correction = self.arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
-            current_speedA = motor_A.currentSpeed
-            current_speedB = motor_B.currentSpeed
-            motor_A.set_speed(current_speedA + speed_correction)
-            motor_B.set_speed(current_speedB - speed_correction)
-            continue
+            elif pyb.elapsed_millis(run_time) > duration: # Condition to end function
+                motor_A.stop()
+                motor_B.stop()
+                break
 
-        elif pyb.elapsed_millis(run_time) > duration: # Condition to end function
-            motor_A.stop()
-            motor_B.stop()
-            break
-
-        else:
-            break
+            else:
+                break
 
 ################# End IMU related Functions ######################

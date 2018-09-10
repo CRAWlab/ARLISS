@@ -69,7 +69,7 @@ altitude_check = 1
 while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
 
     while my_gps_uart.any():
-        gps.update(chr(uart.readchar()))
+        my_gps.update(chr(my_gps_uart.readchar()))
     altitude_1 = my_gps.altitude
 
     while altitude_check == 1:
@@ -81,7 +81,7 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
     time.sleep_ms(3*1000)
 
     while my_gps_uart.any():
-        gps.update(chr(uart.readchar()))
+        my_gps.update(chr(my_gps_uart.readchar()))
     altitude_2 = my_gps.altitude
     print(altitude_2)
     change_in_altitude = altitude_2 - altitude_1
@@ -117,7 +117,7 @@ while 1:
         if valid_sentence_received:
             first_lat = functions.convert_latitude(my_gps.latitude)
             first_lon = functions.convert_longitude(my_gps.longitude)
-            first_point = (start_lat, start_long)
+            first_point = (first_lat, first_long)
             time.sleep_ms(1000)
             break
 
@@ -131,7 +131,7 @@ while 1:
         if valid_sentence_received:
             second_lat = functions.convert_latitude(my_gps.latitude)
             second_lon = functions.convert_longitude(my_gps.longitude)
-            second_point = (start_lat, start_long)
+            second_point = (second_lat, second_long)
             time.sleep_ms(1000)
             break
 
