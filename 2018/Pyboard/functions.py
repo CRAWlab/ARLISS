@@ -516,7 +516,7 @@ def imu_pid(self,duration,speed):
     initial_angle = initial_read[0] # Only interested in yaw
     motor_A.start(speed,'ccw')
     motor_B.start(speed,'cw')
-    while True:
+    while pyb.elapsed_millis(run_time) < duration:
         pyb.delay(100)
         new_read = razor_imu.get_one_frame()
         new_angle = new_read[0]
@@ -542,9 +542,6 @@ def imu_pid(self,duration,speed):
             elif pyb.elapsed_millis(run_time) > duration: # Condition to end function
                 motor_A.stop()
                 motor_B.stop()
-                break
-
-            else:
                 break
 
 ################# End IMU related Functions ######################

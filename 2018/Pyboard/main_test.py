@@ -61,8 +61,8 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and new_data == 0:
     print(new_data)
     time.sleep_ms(500)
 navigation_start_time = pyb.millis()
-log_sd = open('/sd/log/csv', 'w')
-log_sd.write('The first GPS instance is {}\n'.format(navigation_start_time)
+#log_sd = open('/sd/log/csv', 'w')
+#log_sd.write('The first GPS instance is {}\n').format(navigation_start_time)
 
 
 altitude_check = 1
@@ -73,20 +73,20 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
     altitude_1 = my_gps.altitude
 
     while altitude_check == 1:
-        log_sd.write('The first recorded altitude is {}\n').format(altitude_1)
-        log_sd.write('The first recorded latitude is {}\n').format(functions.convert_latitude(my_gps.latitude))
-        log_sd.write('The first recorded longitude is {}\n').format(functions.convert_longitude(my_gps.longitude))
+        #log_sd.write('The first recorded altitude is {}\n').format(altitude_1)
+        #log_sd.write('The first recorded latitude is {}\n').format(functions.convert_latitude(my_gps.latitude))
+        #log_sd.write('The first recorded longitude is {}\n').format(functions.convert_longitude(my_gps.longitude))
         altitude_check = altitude_check + 1
         print(altitude_1)
-    time.sleep_ms(3*1000)
+    time.sleep_ms(3000)
+
 
     while my_gps_uart.any():
         my_gps.update(chr(my_gps_uart.readchar()))
     altitude_2 = my_gps.altitude
-    print(altitude_2)
     change_in_altitude = altitude_2 - altitude_1
     print(change_in_altitude)
-    log_sd.write('The change in altitude is {} at {}\n'.format(change_in_altitude, pyb.elasped_millis(navigation_start_time)))
+    #log_sd.write('The change in altitude is {} at {}\n'.format(change_in_altitude, pyb.elasped_millis(navigation_start_time)))
 
 
 
@@ -103,11 +103,11 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_accel_abs > [2,2
     change_in_accel_z = accel_z_2 - accel_z_1
     change_in_accel = [change_in_accel_x, change_in_accel_y, change_in_accel_z]
     change_in_accel_abs = [abs(x) for x in change_in_accel]
-    print(change_in_accel)
+    print(change_in_accel_abs)
 
-functions.burn_parachute(10*1000)
+functions.burn_parachute(10000)
 functions.move_forward(100)
-time.sleep_ms(10*1000)
+time.sleep_ms(10000)
 functions.stop()
 
 
@@ -122,7 +122,7 @@ while 1:
             break
 
 functions.move_forward(100)
-pyb.delay(10*1000)
+time.sleep_ms(1000)
 functions.stop()
 
 while 1:
@@ -154,8 +154,9 @@ while True:
     orange_LED.off()
     while True:
         start_time = pyb.millis()
-        functions.move_forward(50)
-        functions.imu_pid()
+        functions.move_forward(75)
+        speed = motors.speed
+        functions.imu_pid(duration, speed)
         if pyb.elapsed_millis(start_time) > 20000:
             functions.stop()
             break
