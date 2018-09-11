@@ -42,21 +42,6 @@ def burn_parachute(burn_time):
     pyb.delay(burn_time) # Determined through testing
     relay.low() # Set low to deactive the Relay
 
-########## GPS Related Functions ###########################
-new_data = False
-
-def pps_callback(line):
-    '''The Adafruit GPS has a PPS pin that changes from high to low only when we are recieving data
-        we will use this to our advantage by associating it with an iterrupt to change indicate we are recieving new data'''
-
-    global new_data # Use Global to trigger update
-    new_data = True # Raise flag
-
-
-# Create an external interrupt on pin X8
-pps_pin = pyb.Pin.board.X5
-extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
-extint.disable() # Disabling interrupt so other high process functions can operate correctly without interrupt
 
 def get_altitude():
     extint.enable() # Activating interuppt so new data from GPS can be processed

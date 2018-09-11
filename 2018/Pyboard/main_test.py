@@ -7,7 +7,7 @@ from pyb import Pin
 from configurations import *
 from pyboard_razor_IMU import Razor
 from pyb import ExtInt
-#import functions
+import functions
 import math
 from micropyGPS import MicropyGPS
 
@@ -105,7 +105,7 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_accel_abs > [2,2
     change_in_accel_abs = [abs(x) for x in change_in_accel]
     print(change_in_accel_abs)
 
-functions.burn_parachute(10000)
+functions.burn_parachute(400)
 functions.move_forward(100)
 time.sleep_ms(10000)
 functions.stop()
