@@ -100,3 +100,4 @@ accel = pyb.Accel()
 change_in_altitude = -100
 change_in_accel_abs = [10,10,10]
 duration = 20*1000
+iteration_number = 0

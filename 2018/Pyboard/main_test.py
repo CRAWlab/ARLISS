@@ -40,8 +40,9 @@ green_LED.off()
 #save this to get an idea on how long the code was running
 absolute_start_time = pyb.millis()
 log_sd = open('/sd/log.csv','w')
-log_sd.write('The start time of the code is {}\n'.format(absolute_start_time))
+log_sd.write('The start time of the code is {}\n').format(absolute_start_time)
 log_sd.close()
+#will be a good idea to mark the time down
 start_time = pyb.millis()
 
 ###### TIME DELAY ON LOOKING FOR GPS COORDINATES ##############
@@ -103,7 +104,7 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
     change_in_altitude = altitude_2 - altitude_1
     print(change_in_altitude)
     log_sd = open('/sd/log/csv', 'w')
-    log_sd.write('The change in altitude is {} at {}\n'.format(change_in_altitude, pyb.elasped_millis(absolute_start_time)))
+    log_sd.write('The change in altitude is {} at {}\n').format(change_in_altitude, pyb.elasped_millis(absolute_start_time))
     log_sd.close()
 
 ############# CONFIRM DEVICE HAS LANDED USING ACCELEROMETER #############
@@ -128,7 +129,7 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_accel_abs > [2,2
 ################# BURN OFF PARACHUTE ########################
 functions.burn_parachute(400)
 log_sd = open('/sd/log/csv','w')
-log_sd.write('The parachute was burned at {}\n'.format(pyb.elapsed_millis(absolute_start_time)))
+log_sd.write('The parachute was burned at {}\n').format(pyb.elapsed_millis(absolute_start_time))
 functions.move_forward(100)
 time.sleep_ms(10000)
 functions.stop()
@@ -142,7 +143,7 @@ while True:
             first_lon = functions.convert_longitude(my_gps.longitude)
             first_point = (first_lat, first_long)
             log_sd = open('/sd/log.csv', 'w')
-            log_sd.write('The first recorded (latitude, longitude) is {} at {}.\n'.format(first point, pyb.elapsed_millis(absolute_start_time)))
+            log_sd.write('The first recorded (latitude, longitude) is {} at {}.\n').format(first point, pyb.elapsed_millis(absolute_start_time))
             log_sd.close()
             time.sleep_ms(1000)
             break
@@ -162,19 +163,18 @@ while True:
             second_lon = functions.convert_longitude(my_gps.longitude)
             second_point = (second_lat, second_long)
             log_sd = open('/sd/log.csv', 'w')
-            log_sd.write('The second recorded (latitude, longitude) is {} at {}\n'.format(second_point, pyb.elapsed_millis(absolute_start_time)))
+            log_sd.write('The second recorded (latitude, longitude) is {} at {}\n').format(second_point, pyb.elapsed_millis(absolute_start_time))
             log_sd.close()
             time.sleep_ms(1000)
             break
 ############ CALCULATE BEARING AND DISTANCE FROM GOAL ###############
-#we need to save this data
 
 dist_from_goal = functions.calculate_distance(finish_point, first_point)
 degree_to_turn = function.bearing_difference(finish_point, first_point, second_point)
 functions.angle_to_motor_turn(wheel_separation, wheel_radius, gain, degree_to_turn[0], degree_to_turn[1])
 log_sd = open('/sd/log/csv', 'w')
-log_sd.write('The first recorded distance from the goal is {} at {}\n'.format(dist_from_goal, pyb.elapsed_millis(absolute_start_time))
-log_sd.write('The degree change needed to achieve this goal is {}\n'.format(degree_to_turn))
+log_sd.write('The first recorded distance from the goal is {} at {}\n').format(dist_from_goal, pyb.elapsed_millis(absolute_start_time))
+log_sd.write('The degree change needed to achieve this goal is {}\n').format(degree_to_turn)
 log_sd.close()
 past_point = second_point
 orange_LED.on()
@@ -184,16 +184,20 @@ orange_LED.off()
 
 ################### MAIN NAVIGATION LOOP #########################
 while True:
+    iteration_number = iteration_number + 1
+    log_sd = open('/sd/log.csv', 'w')
+    log_sd.write('Iteration:    {}\n').format(iteration_number)
+    log_sd.write('Time:     {}\n').format(pyb.elapsed_millis(absolute_start_time))
+    log_sd.close()
     initial_point = past_point
-    functions.move_forward(100)
+    functions.motor_accel(100, 50)
     orange_LED.on()
     time.sleep_ms(2*1000)
     orange_LED.off()
     while True:
         start_time = pyb.millis()
         functions.move_forward(75)
-        speed = motors.speed
-        functions.imu_pid(duration, speed)
+        functions.imu_pid(duration, 75)
         if pyb.elapsed_millis(start_time) > 20000:
             functions.stop()
             break
@@ -204,18 +208,23 @@ while True:
         present_lat = functions.convert_latitude(my_gps.latitude)
         present_lon = functions.convert_longitude(my_gps.longitude)
         present_point = (start_lat, start_lon)
-        #save present_lat and present_lon
+        log_sd = open('/sd/log.csv', 'w')
+        log_sd.write('The Present Point is {} at {}\n').format(present_point, pyb.elapsed_millis(absolute_start_time))
+        log_sd.close()
         #need to add a stuck function here based on the present point and past point
         #save the data to show that the stuck function was used
         dist_from_goal = functions.calculate_distance(finish_point, present_point)
         degree_to_turn = functions.bearing_difference(finish_point, initial_point, present_point)
         functions.angle_to_motor_turn(wheel_separation, wheel_radius, gain, degree_to_turn[0], degree_to_turn[1])
-        #save this data
+        log_sd = open('/sd/log.csv', 'w')
+        log_sd.write('The distance from goal is {} at {}\n').format(dist_from_goal, pyb.elapsed_millis(absolute_start_time))
+        log_sd.write('The degree change needed to achieve this goal is {}\n').format(degree_to_turn)
+        log_sd.close()
         time.sleep_ms(1000)
         past_point = present_point
         new_data=False
     elif dist_from_goal < distance_tolerance:
-        functions.stop()
+        functions.motor_deccel(100, 50)
         log_sd = open('/sd/log.csv', 'w')
         log_sd.write('The destination was reached at {}\n'.format(pyb.elapsed_millis(absolute_start_time)))
         log_sd.close()

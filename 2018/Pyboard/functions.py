@@ -271,16 +271,18 @@ def turn_right(speed):
     motor_B.start(speed,'ccw')
 
 def motor_accel(speed, time):
-    for x in range(1, speed+1):
+    for x in range(10, speed+1):
         motor_A.set_speed(x)
         motor_B.set_speed(x)
         time.sleep_ms(time)
 
 def motor_deccel(speed, time):
-    for x in range(1,speed+1):
+    for x in range(1,speed-(speed-10)):
         motor_A.set_speed(speed-x)
         motor_B.set_speed(speed-x)
         time.sleep_ms(time)
+    motor_A.set_speed(0)
+    motor_B.set_speed(0)
 
 def stuck():
     turn_degree(90, 'right', 2)
