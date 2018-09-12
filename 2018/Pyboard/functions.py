@@ -29,26 +29,38 @@ from configurations import *
 ################### Defining Functions ####################
 
 def arduino_map(x, in_min, in_max, out_min, out_max):
-    '''This function takes value x set to one range and maps it to a relevant range. Typically used for correction with PID'''
+    '''
+    This function takes value x set to one range and maps it to a relevant 
+    range. Typically used for correction with PID'''
 
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 def burn_parachute(burn_time):
-
-    '''The parachute is wired to the Normally opened position of the relay the connected to ground. Once the output pin is set to high this will trigger the relay thus completing the circuit to generate heat to burn the parachute
-        Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017'''
-
-    relay.high() # Set high to activate the relay
-    pyb.delay(burn_time) # Determined through testing
-    relay.low() # Set low to deactive the Relay
+    '''
+    The parachute is wired to the gate of a mosfet Once the output pin is set 
+    to high, this will trigger "switch" thus completing the circuit to 
+    generate heat to burn the parachute
+    
+    Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017
+    
+    Modified: Kyle Lelueax for ARLISS 2018
+        
+    '''
+    
+    # TODO: 09/11/18 - JEV - Change relay naming to parachute_pin?
+    relay.high()            # Set high to activate the relay
+    pyb.delay(burn_time)    # Determined through testing
+    relay.low()             # Set low to deactive the Relay
 
 
 def get_altitude():
     extint.enable() # Activating interuppt so new data from GPS can be processed
+    
     global new_data
     global black_rock_alt_m
     global alt_threshold
-    while 1:
+    
+    while True:
         # Update the GPS Object when flag is tripped
         if new_data:
             while my_gps_uart.any():
@@ -59,35 +71,43 @@ def get_altitude():
                 current_altitude = altitude
                 new_data = False #clear flag
                 break
+
     extint.disable()  # Disabling interrupt so other high process functions can operate correctly without interrupt
     return current_altitude
+
 def monitor_descent():
     timer = pyb.millis()
     extint.enable() # Activating interuppt so new data from GPS can be processed
+    
     global new_data
     global black_rock_alt_m
     global alt_threshold
     global force_start_timer
-    while 1:
 
+    while True:
     # Update the GPS Object when flag is tripped
         if new_data:
             while my_gps_uart.any():
 
                 my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
+            
             current_altitude = my_gps.altitude # Grabbing parameter designated by micropyGPS object
             pyb.delay(3000)
+            
             print(current_altitude)
+            
             if int(current_altitude) != 0:
                 continue
 
             if int(current_altitude) < black_rock_alt_m + alt_threshold:
                 new_data = False #clear flag
                 break
-      # Disabling interrupt so other high process functions can operate correctly without interrupt
             elif elapsed_millis(timer) > force_start_timer :
                 break
+
+    # Disabling interrupt so other high process functions can operate correctly without interrupt
     extint.disable()
+    
     return current_altitude
 
 
@@ -128,15 +148,19 @@ def get_location():
 
             lat = my_gps.latitude
             lon = my_gps.longitude
+            
             converted_lat = convert_latitude(lat) # Converting Lat (dd.mmss)
             converted_lon = convert_longitude(lon) # Converting Lon (dd.mmss
             point = (converted_lat, converted_lon) # Creating single variable for utilization in calculations
+            
             pyb.delay(3000)
             print(point)
+            
             if int(converted_lat) != 0: # Since converted lat is still in a string it needs to be converted to a integer for comparison
                 location = point
                 new_data = False
                 break
+    
     extint.disable()  # Disabling interrupt so other high process functions can operate correctly without interrupt
     return location
 
@@ -174,6 +198,7 @@ def calculate_distance(position1, position2):
 
     x = dLon * math.cos((lat1+lat2)/2)
     distance = math.sqrt(x**2 + dLat**2) * EARTH_RADIUS
+    
     return distance
 
 def calculate_bearing(position1, position2):
@@ -189,14 +214,17 @@ def calculate_bearing(position1, position2):
         *
         '''
 
-    global bearing
+    global bearing # TODO: 09/11/18 - JEV - Why is this needed here?
+    
     lat1 = math.radians(position1[0])
     long1 = math.radians(position1[1])
     lat2 = math.radians(position2[0])
     long2 = math.radians(position2[1])
     dLon = long2 - long1
+    
     y = math.sin(dLon) * math.cos(lat2)
     x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dLon)
+    
     bearing = (math.degrees(math.atan2(y, x)) + 360) % 360
 
     return bearing
@@ -231,19 +259,18 @@ def bearing_difference(finish, previous, current):
     else:
         turn_direction = 0  # Stay straight
 
-        return course_error, turn_direction, current_heading, desired_heading
+    return course_error, turn_direction, current_heading, desired_heading
 
 ########## End GPS Related Functions ###########################
 
 ################# Motor / Encoder Related Functions ###################
 def move_forward(speed):
-    #Move both wheels at same speed in opposites direction to move forward
+    # Move both wheels at same speed in opposites direction to move forward
     motor_A.start(speed, 'ccw')
     motor_B.start(speed, 'cw')
 
 def move_backward(speed):
-
-    #Move both wheels at same speed in sopposite directions to move backward
+    # Move both wheels at same speed in sopposite directions to move backward
     motor_A.start(speed, 'cw')
     motor_B.start(speed, 'ccw')
 
@@ -281,6 +308,7 @@ def motor_deccel(speed, time):
         motor_A.set_speed(speed-x)
         motor_B.set_speed(speed-x)
         time.sleep_ms(time)
+    
     motor_A.set_speed(0)
     motor_B.set_speed(0)
 
@@ -292,13 +320,21 @@ def stuck():
     stop()
 
 def calculate_ang_velocity(encoder_timer):
-    '''Uses data from associated encoder calculates difference in count over a sample time to output the angular velocity of the motor.
-        Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017'''
+    '''
+    Uses data from associated encoder calculates difference in count over a 
+    sample time to output the angular velocity of the motor.
+    
+    Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017
+    '''
+    
     cpr = 2256 # Counts per revolution based on specifications and gear ratio of motor
     start = pyb.millis() # Begin sample time
+    
     initial_count = encoder_timer.counter() # Grabbing initial count of encoder
     sample_time = pyb.delay(10) # Delay small but significant for sample time
-    '''Since the  maximum rps is 3.5 with 2249 cpr that equates to 7.87 counts per ms maximum allowing for 50ms to be sufficient'''
+    
+    # Since the  maximum rps is 3.5 with 2249 cpr that equates to 7.87 counts 
+    # per ms maximum allowing for 50ms to be sufficient
 
     # velocity in counts per second
     ang_velocity_cps = 1000*(abs(encoder_timer.counter()-initial_count))/(pyb.elapsed_millis(start))
@@ -360,19 +396,19 @@ def cruise_control(duration, speed):
         motor_B.set_speed(speed + conversion_B)
 
         with open('/sd/log.txt', 'a') as log:
-    		log.write('A vel: {:.4f}'.format(A_velocity))
-    		log.write('B vel: {:.4f}'.format(B_velocity))
-    		log.write('A correction: {:.4f}'.format(A_correction))
-    		log.write('B correction: {:.4f}'.format(B_correction))
-    		log.write('A conversion: {:.4f}'.format(conversion_A))
-    		log.write('B conversion: {:.4f}'.format(conversion_B))
+            log.write('A vel: {:.4f}'.format(A_velocity))
+            log.write('B vel: {:.4f}'.format(B_velocity))
+            log.write('A correction: {:.4f}'.format(A_correction))
+            log.write('B correction: {:.4f}'.format(B_correction))
+            log.write('A conversion: {:.4f}'.format(conversion_A))
+            log.write('B conversion: {:.4f}'.format(conversion_B))
 
-		if pyb.elapsed_millis(run_time) > duration: # Condition to end function
-			motor_A.set_speed(0)
-			motor_B.set_speed(0)
-			break
+        if pyb.elapsed_millis(run_time) > duration: # Condition to end function
+            motor_A.set_speed(0)
+            motor_B.set_speed(0)
+            break
 
-def correct_course_error(finish , previous , current):
+def correct_course_error(finish, previous, current):
     """
         This function takes the angle and issues a timed command to one motor to
         rotate the rover to a specific angle. Angle must be in degrees; Direction is
@@ -380,13 +416,15 @@ def correct_course_error(finish , previous , current):
         Gain is used to tweak values to compensate for inertial effects [gain>0]
         Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017
         """
-    global course_error
-    global turn_direction
-    global wheel_separation
-    global wheel_radius
-    global course_error_gain
+        
+    # 09/11/18 - JEV - We don't need global to just read global variables
+    # global course_error
+    # global turn_direction
+    # global wheel_separation
+    # global wheel_radius
+    # global course_error_gain
 
-    bearing_difference(finish,previous,current)
+    bearing_difference(finish,previous,current) # TODO: 09/11/18 - JEV - what is this??
     angle = math.radians(course_error)
 
     speed = 40 # This PWM speed is approximately 1 revolution per second can be perfected with gain changes
@@ -410,13 +448,13 @@ def correct_course_error(finish , previous , current):
         motor_B.set_speed(0)
 
 def turn_degree(angle,direction,gain):
-
     '''This function allows the user to to turn to a specified degree in the direction they choose.
         Gain is used to tweak values to compensate for inertial effects [gain>0]
         Created By: Joseph Fuentes - jaf1036@louisiana.edu 08/09/2017'''
 
-    global wheel_separation
-    global wheel_radius
+# 09/11/18 - JEV - We don't need global to just read global variables
+#     global wheel_separation
+#     global wheel_radius
 
     angle = math.radians(angle)
     turn_direction = direction # Must be 'left' or 'right'
@@ -437,10 +475,13 @@ def turn_degree(angle,direction,gain):
         motor_B.start(speed, 'cw')
         pyb.delay(abs(int(time_to_rotate)))
         motor_B.stop()
+
+
 def turn(angle,direction):
     initial_read = razor_imu.get_one_frame()
     initial_angle = abs(int(initial_read[0]))
     sensitivity = 5
+    
     while True:
         pyb.delay(100)
         new_read = razor_imu.get_one_frame()
@@ -471,24 +512,31 @@ def IMU_read(self):
     return yaw, pitch, roll
 
 def imu_pid(self,duration,speed):
-    '''This functions utilizes the constant streaming function of the Razor IMU refer to 'pyboard_razor_IMU.py' for details. The function takes data from the IMU the stores it as an initial angle then uses changes in yaw to correct inconsistencies in motor speed'''
+    '''
+    This functions utilizes the constant streaming function of the Razor IMU 
+    refer to 'pyboard_razor_IMU.py' for details. The function takes data from 
+    the IMU the stores it as an initial angle then uses changes in yaw to 
+    correct inconsistencies in motor speed
+    '''
 
-    run_time = pyb.millis() # Start timer for the run time of the cruise control
-    duration = self.duration # Desired duration of the cruise control [ms]
-    speed = self.speed # Desired speed, value of PWM
-
+    run_time = pyb.millis()     # Start timer for the run time of the cruise control
+    duration = self.duration    # Desired duration of the cruise control [ms]
+    speed = self.speed          # Desired speed, value of PWM
 
     # PID values [NEEDS TUNING!!!!!]
     kp_IMU  = 2
     ki_IMU  = 0
     kd_IMU  = 1
-    dt = 10000
+    dt = 10000 # This time doesn't seem right... dt should be in s
 
     # Max / Min is limited to the object being influenced in this case motor PWM
     max_out = 90
     min_out = 0
 
     # Creating PID object
+    # TODO: 09/11/18 - JEV - This is not correct. It's creating new instances
+    #                        of the PID controller each time this function
+    #                        is called.
     IMU_pid = PID(kp_IMU, ki_IMU, kd_IMU, dt, max_out, min_out)
 
     # Max / Min output angle produced by the IMU
@@ -501,30 +549,38 @@ def imu_pid(self,duration,speed):
     # Establishing initial yaw angle
     initial_read = razor_imu.get_one_frame()
     initial_angle = initial_read[0] # Only interested in yaw
+    
+    # TODO: 09/11/18 - JEV - Why are the motors turned here?
     motor_A.start(speed,'ccw')
     motor_B.start(speed,'cw')
+    
     while pyb.elapsed_millis(run_time) < duration:
-        pyb.delay(100)
+        pyb.delay(100) # TODO: 09/11/18 - JEV - Why the delay here?
         new_read = razor_imu.get_one_frame()
         new_angle = new_read[0]
+        
         if abs(new_angle-initial_angle) > sensitivity:
             if abs(new_angle) > abs(initial_angle): #The tank is drifting right
                 angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
                 speed_correction= self.arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
+                
                 current_speedA = motor_A.currentSpeed
                 current_speedB = motor_B.currentSpeed
+                
                 motor_A.set_speed(current_speedA - speed_correction)
                 motor_B.set_speed(current_speedB + speed_correction)
-                continue
+                # continue - 09/11/18 - We shouldn't need this continue
 
             elif abs(new_angle) < abs(initial_angle): #The tank is drifting left
                 angle_correction = pid_IMU.compute_output(initial_angle,new_angle)
                 speed_correction = self.arduino_map(angle_correction, IMU_min, IMU_max, 0, 100)
+                
                 current_speedA = motor_A.currentSpeed
                 current_speedB = motor_B.currentSpeed
+                
                 motor_A.set_speed(current_speedA + speed_correction)
                 motor_B.set_speed(current_speedB - speed_correction)
-                continue
+                # continue - 09/11/18 - We shouldn't need this continue
 
             elif pyb.elapsed_millis(run_time) > duration: # Condition to end function
                 motor_A.stop()
