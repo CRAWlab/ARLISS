@@ -136,7 +136,7 @@ functions.stop()
 
 ################# ESTABLISH LANDING POINT ######################
 while True:
-    if my_gps_uart.any():
+    while my_gps_uart.any():
         valid_sentence_received = my_gps.update(chr(my_gps_uart.readchar()))
         if valid_sentence_received:
             first_lat = functions.convert_latitude(my_gps.latitude)
@@ -156,7 +156,7 @@ functions.stop()
 #this is necessary to calculate the bearing
 
 while True:
-    if my_gps_uart.any():
+    while my_gps_uart.any():
         valid_sentence_received = my_gps.update(chr(my_gps_uart.readchar()))
         if valid_sentence_received:
             second_lat = functions.convert_latitude(my_gps.latitude)
