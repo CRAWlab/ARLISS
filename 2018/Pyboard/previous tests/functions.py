@@ -57,8 +57,10 @@ def get_altitude():
     extint.enable() # Activating interuppt so new data from GPS can be processed
     
     global new_data
-    global black_rock_alt_m
-    global alt_threshold
+    
+    # 09/11/18 - JEV - We don't need global to just read global variables
+    # global black_rock_alt_m
+    # global alt_threshold
     
     while True:
         # Update the GPS Object when flag is tripped
@@ -75,20 +77,21 @@ def get_altitude():
     extint.disable()  # Disabling interrupt so other high process functions can operate correctly without interrupt
     return current_altitude
 
+
 def monitor_descent():
     timer = pyb.millis()
     extint.enable() # Activating interuppt so new data from GPS can be processed
     
-    global new_data
-    global black_rock_alt_m
-    global alt_threshold
-    global force_start_timer
+    # 09/11/18 - JEV - We don't need global to just read global variables
+    # global new_data
+    # global black_rock_alt_m
+    # global alt_threshold
+    # global force_start_timer
 
     while True:
     # Update the GPS Object when flag is tripped
         if new_data:
             while my_gps_uart.any():
-
                 my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
             
             current_altitude = my_gps.altitude # Grabbing parameter designated by micropyGPS object
@@ -102,6 +105,7 @@ def monitor_descent():
             if int(current_altitude) < black_rock_alt_m + alt_threshold:
                 new_data = False #clear flag
                 break
+
             elif elapsed_millis(timer) > force_start_timer :
                 break
 
@@ -113,35 +117,40 @@ def monitor_descent():
 
 
 def convert_latitude(lat_NS):
-    """ Function to convert deg m N/S latitude to DD.dddd (decimal degrees)
-        Arguments:
-        lat_NS : tuple representing latitude
-        in format of MicroGPS gps.latitude
-        Returns:
-        float representing latitidue in DD.dddd
-        Created By: Dr. Joshua Vaughan - joshua.vaughan@louisiana.edu
-        """
+    """ 
+    Function to convert deg m N/S latitude to DD.dddd (decimal degrees)
+        
+    Arguments:
+      lat_NS : tuple representing latitude in format of MicroGPS gps.latitude
+
+    Returns:
+      float representing latitidue in DD.dddd
+
+    Created By: Dr. Joshua Vaughan - joshua.vaughan@louisiana.edu
+    """
 
     return (lat_NS[0] + lat_NS[1] / 60) * (1.0 if lat_NS[2] == 'N' else -1.0)
 
 def convert_longitude(long_EW):
-    """ Function to convert deg m E/W longitude to DD.dddd (decimal degrees)
-        Arguments:
-        long_EW : tuple representing longitude
-        in format of MicroGPS gps.longitude
-        Returns:
-        float representing longtidue in DD.dddd
-        Created By: Dr. Joshua Vaughan - joshua.vaughan@louisiana.edu
-        """
+    """ 
+    Function to convert deg m E/W longitude to DD.dddd (decimal degrees)
+    
+    Arguments:
+      long_EW : tuple representing longitude in format of MicroGPS gps.longitude
+    
+    Returns:
+      float representing longtidue in DD.dddd
+    
+    Created By: Dr. Joshua Vaughan - joshua.vaughan@louisiana.edu
+    """
 
     return (long_EW[0] + long_EW[1] / 60) * (1.0 if long_EW[2] == 'E' else -1.0)
 
 def get_location():
-
     extint.enable() # Activating interuppt so new data from GPS can be processed
     global new_data
 
-    while 1:
+    while True:
         if new_data:
             while my_gps_uart.any():
                 my_gps.update(chr(my_gps_uart.readchar()))  # Note the conversion to to chr, UART outputs ints normally
@@ -165,27 +174,30 @@ def get_location():
     return location
 
 def calculate_distance(position1, position2):
-    ''' Calculate the distance between two lat/long coords using simple
-        cartesian math
+    ''' 
+    Calculate the distance between two lat/long coords using simple 
+    cartesian math
 
-        Equation from: http://www.movable-type.co.uk/scripts/latlong.html
+    Equation from: http://www.movable-type.co.uk/scripts/latlong.html
 
-        Input arguments:
-        position1 = lat/long pair in decimal degrees DD.dddddd
-        position2 = lat/long pair in decimal degrees DD.dddddd
+    Input arguments:
+      position1 = lat/long pair in decimal degrees DD.dddddd
+      position2 = lat/long pair in decimal degrees DD.dddddd
 
-        Returns:
-        distance = distance from position 1 to position 2 in meters
+    Returns:
+      distance = distance from position 1 to position 2 in meters
 
+    Created: Joshua Vaughan - joshua.vaughan@louisiana.edu - 04/24/14
 
-        Created: Joshua Vaughan - joshua.vaughan@louisiana.edu - 04/24/14
-
-        Modified:
-        * Forrest Montgomery -- the micropython board did not like the radians
-        conversion turned into a tuple. So I separated all the lats and longs.
-        '''
-    global EARTH_RADIUS
-    global distance
+    Modified:
+    * Forrest Montgomery -- the micropython board did not like the radians
+      conversion turned into a tuple. So I separated all the lats and longs.
+    '''
+        
+    # 09/11/18 - JEV - We don't need global to just read global variables
+    # global EARTH_RADIUS
+    # global distance
+    
     lat1, long1 = position1
     lat2, long2 = position2
     lat1 = math.radians(lat1)
@@ -201,18 +213,21 @@ def calculate_distance(position1, position2):
     
     return distance
 
+
 def calculate_bearing(position1, position2):
-    ''' Calculate the bearing between two GPS coordinates
-        Equations from: http://www.movable-type.co.uk/scripts/latlong.html
-        Input arguments:
-        position1 = lat/long pair in decimal degrees DD.dddddd
-        position2 = lat/long pair in decimal degrees DD.dddddd
-        Returns:
-        bearing = initial bearing from position 1 to position 2 in degrees
-        Created: Dr. Joshua Vaughan - joshua.vaughan@louisiana.edu
-        Modified:
-        *
-        '''
+    ''' 
+    Calculate the bearing between two GPS coordinates
+    Equations from: http://www.movable-type.co.uk/scripts/latlong.html
+    
+    Input arguments:
+      position1 = lat/long pair in decimal degrees DD.dddddd
+      position2 = lat/long pair in decimal degrees DD.dddddd
+    
+    Returns:
+      bearing = initial bearing from position 1 to position 2 in degrees
+    
+    Created: Dr. Joshua Vaughan - joshua.vaughan@louisiana.edu
+    '''
 
     global bearing # TODO: 09/11/18 - JEV - Why is this needed here?
     
@@ -241,16 +256,18 @@ def bearing_difference(finish, previous, current):
     global current_heading
     global desired_heading
 
+    # TODO: 09/11/18 - JEV - Why do we need these globals if the function
+    #                        returns them?
     current_heading = calculate_bearing(previous, current)
     desired_heading = calculate_bearing(previous, finish)
     course_error = int(desired_heading - current_heading)
 
     # Correct for heading 'wrap around' to find shortest turn
-
     if course_error > 180:
         course_error -= 360
     elif course_error < -180:
         course_error += 360
+   
     # record the turn direction - mainly for debugging
     if course_error > 0:
         turn_direction = 1  # Turn right
