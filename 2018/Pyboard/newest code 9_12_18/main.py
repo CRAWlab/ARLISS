@@ -43,7 +43,6 @@ pps_pin = pyb.Pin.board.X5
 extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callback)
 
 ################### READ FOR FLIGHT TRIGGER WIRE #######################
-
 while True:
     trigger_Pin_Value = trigger_Pin.value()
     time.sleep_ms(50)
@@ -75,6 +74,7 @@ log_sd.close()
 start_time = pyb.millis()
 
 ###### TIME DELAY ON LOOKING FOR GPS COORDINATES ##############
+# TODO: 09/12/18 - JEV - What is the reason for this while loop?
 while pyb.elapsed_millis(start_time) < 5000:
     time.sleep_ms(1000)
     blue_LED.toggle()
@@ -92,7 +92,7 @@ blue_LED.off()
 ######################### WAITING FOR NEW DATA ###############
 start_time = pyb.millis()
 
-while pyb.elapsed_millis(start_time) < 60*1000*90 and new_data == 0:
+while pyb.elapsed_millis(start_time) < FORCE_START_TIMER and new_data == 0:
     print(new_data)
     time.sleep_ms(500)
 
@@ -101,18 +101,21 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and new_data == 0:
         for x in range(0,6):
             orange_LED.toggle()
             time.sleep_ms(250)
+        
         for x in range(0,6):
             orange_LED.toggle()
             time.sleep_ms(500)
 
-
 orange_LED.off()
+
 log_sd = open('/sd/log.csv', 'a')
 log_sd.write('The first GPS instance is {}\n'.format(pyb.elapsed_millis(absolute_start_time)))
 log_sd.close()
 
 ###################### CALCULATE ALTITUDE CHANGE ######################
-while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
+# TODO: 09/12/18 - JEV - need to test noise in GPS altitude signal to determine
+#                        the proper value for change in altitude check
+while pyb.elapsed_millis(start_time) < FORCE_START_TIMER and change_in_altitude < -5:
 
     while my_gps_uart.any():
         my_gps.update(chr(my_gps_uart.readchar()))
@@ -136,6 +139,7 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
     # time read
     while my_gps_uart.any():
         my_gps.update(chr(my_gps_uart.readchar()))
+    
     altitude_2 = my_gps.altitude
     print('alt 2: {}'.format(altitude_2))
 
@@ -147,8 +151,9 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
     log_sd.write('The change in altitude is {} at {}\n'.format(change_in_altitude, pyb.elapsed_millis(absolute_start_time)))
     log_sd.close()
 
+
 ############# CONFIRM DEVICE HAS LANDED USING ACCELEROMETER #############
-while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_accel_abs > [2,2,2]:
+while pyb.elapsed_millis(start_time) < FORCE_START_TIMER and change_in_accel_abs > [2,2,2]:
     # TODO: 09/11/18 - JEV - Are these the right changes in accel for this limit?
     accel_x_1 = accel.x()
     accel_y_1 = accel.y()
@@ -177,6 +182,8 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_accel_abs > [2,2
 log_sd = open('/sd/log.csv','a')
 log_sd.write('The parachute was burned at {}\n'.format(pyb.elapsed_millis(absolute_start_time)))
 log_sd.close()
+
+# Drive forward for 10 seconds
 functions.motor_accel(100,50)
 time.sleep_ms(10000)
 functions.motor_deccel(100,50)
@@ -197,8 +204,7 @@ while True:
             time.sleep_ms(1000)
             break
 
-# Driver forward for 1 second
-# TODO: 09/11/18 - JEV - we may want to drive longer, at least for the first time
+# Drive forward for 10 seconds
 functions.motor_accel(100,50)
 time.sleep_ms(10000)
 functions.motor_deccel(100,50)
