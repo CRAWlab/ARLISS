@@ -8,7 +8,7 @@
 #
 # Uses Folium to generate maps of a GPS path 
 #  - https://github.com/python-visualization/folium
-#  - Conda install - https://anaconda.org/ioos/folium
+#  - Conda install - https://anaconda.org/conda-forge/folium
 #
 # NOTE: Plotting is set up for output, not viewing on screen.
 #       So, it will likely be ugly on screen. The saved PDFs should look
@@ -29,6 +29,9 @@
 #       - begin conversion away from Anaconda data
 #   * 09/16/15 - JEV - joshua.vaughan@louisiana.edu
 #       - Update parsing for ARLISS 2015 data log order
+#   * 09/13/18 - JEV - joshua.vaughan@louisiana.edu
+#       - Added parsing for ARLISS 2018 data log order
+#       - Updates for Folium 0.6
 #
 ##########################################################################################
 
@@ -51,9 +54,12 @@ DRAW_WAYPOINTS = False           # Draw the waypoints?
 BATCH = False                    # Batch processing?
 
 
+
 def create_map(data_filename):
     ''' Actually creates the map '''
     waypoints = None
+    target = None
+    
     # TODO: be more efficient
     with open(data_filename, 'rb') as data_file:  
          data = np.genfromtxt(data_file, delimiter=',', skip_header = 1)#, dtype = 'float')
@@ -106,7 +112,7 @@ def create_map(data_filename):
     
         waypoints = None
     
-    if np.shape(data)[1] == 11: # pyBoard... file
+    elif np.shape(data)[1] == 11: # pyBoard... file
         # (timestamp, past point, current point, current bearing, desired bearing, angle, target distance)
         data_ok = True
         
@@ -133,6 +139,24 @@ def create_map(data_filename):
         angle_to_turn = data[:,9]
         
         target_distance = data[:,10]
+
+    elif np.shape(data)[1] == 7: # ARLISS 2018 Log file
+        # Time,Latitude,Longitude,DistanceToTarget,CurrentBearing,DesiredBearing,CourseCorrection
+        data_ok = True
+        
+        time = (data[:,0] - data[0,0])/1000
+        latitude = data[0:,1]
+        longitude = data[0:,2]
+        target_distance = data[0:,3]
+        current_bearing = data[0:,4]
+        desired_bearing = data[0:,5]
+        angle_to_turn = data[0:,6]
+        
+        target = np.array([40.8680667, -119.1216167])
+        
+        past_latitude = False # Used in a later check for this data
+        
+        waypoints = None
         
     else:
         data_ok = False
@@ -141,12 +165,16 @@ def create_map(data_filename):
 
     if data_ok: # If we have meaningful data, make the map
         # Define the start, target, and midpoint locations
-        start = np.array([past_latitude[0], past_longitude[0]])
-
-        if waypoints is not None:
-            target = waypoints[-1,:]    # last waypoint is the target location
+        if past_latitude:
+            start = np.array([past_latitude[0], past_longitude[0]])
         else:
-            target = np.array([latitude[-1], longitude[-1]])
+            start = np.array([latitude[0], longitude[0]])
+
+        if target is None:
+            if waypoints is not None:
+                target = waypoints[-1,:]    # last waypoint is the target location
+            else:
+                target = np.array([latitude[-1], longitude[-1]])
 
 
         midpoint = geoCalc.calculate_midpoint(start, target)
@@ -155,32 +183,40 @@ def create_map(data_filename):
         if PRODUCE_FOLIUMMAP:
             ''' Create a folium map'''
             # Set up base map, centered on the midpoint between start and finish
-            mymap = folium.Map(location = [midpoint[0], midpoint[1]], zoom_start=16)
+            mymap = folium.Map(location = [midpoint[0], midpoint[1]], zoom_start=14)
     
             lat_shaped = latitude.reshape(len(latitude),1)
             long_shaped = longitude.reshape(len(latitude),1)
 
             # Draw a green circle with popup information at the start location
-            mymap.circle_marker(location = [start[0], start[1]], radius = 10, 
-                                            popup = 'Start -- Lat, Lon: {:4.4f}, {:4.4f}'.format(start[0], start[1]), 
-                                            line_color = '#00FF00', 
-                                            fill_color = '#00FF00')
+#             folium.CircleMarker(location = [start[0], start[1]], radius = 10, 
+#                                             popup = 'Start -- Lat, Lon: {:4.4f}, {:4.4f}'.format(start[0], start[1]), 
+#                                             color = '#00FF00', 
+#                                             fill_color = '#00FF00').add_to(mymap)
+                                            
+            folium.Marker(location = [start[0], start[1]], 
+                          popup = 'Landing: {:4.4f}, {:4.4f}'.format(start[0], start[1]),
+                          icon=folium.Icon(color = 'green',icon='download')).add_to(mymap)
             
             # Draw a red circle with popup information at the target location
-            mymap.circle_marker(location = [target[0], target[1]], radius = 10, 
-                                            popup = 'Target -- Lat, Lon: {:4.4f}, {:4.4f}'.format(target[0], target[1]), 
-                                            line_color = '#FF0000', 
-                                            fill_color = '#FF0000')    
+#             folium.CircleMarker(location = [target[0], target[1]], radius = 10, 
+#                                             popup = 'Target -- Lat, Lon: {:4.4f}, {:4.4f}'.format(target[0], target[1]), 
+#                                             color = '#FF0000', 
+#                                             fill_color = '#FF0000').add_to(mymap)
+            
+            folium.Marker(location = [target[0], target[1]], 
+                          popup = 'Target: {:4.4f}, {:4.4f}'.format(target[0], target[1]),
+                          icon=folium.Icon(color = 'red',icon='flag')).add_to(mymap)
 
             if DRAW_WAYPOINTS:
                 for index, waypoint in enumerate(waypoints):
                     if index < len(waypoints)-1:
                         # Draw white circles with popup information at each waypoint
-                        mymap.circle_marker(location = [waypoint[0],waypoint[1]], 
+                        folium.CirleMarker(location = [waypoint[0],waypoint[1]], 
                                             radius = 8, 
                                             popup='Waypoint Num: {:.0f} -- Lat, Lon: {:4.4f}, {:4.4f}'.format(index+1, waypoint[0], waypoint[1]), 
-                                            line_color = '#FFFFFF', 
-                                            fill_color = '#FFFFFF')
+                                            color = '#FFFFFF', 
+                                            fill_color = '#FFFFFF').add_to(mymap)
 
                 #----- Draw the trial on a  map ---------------------------------------------------
             path = np.hstack((lat_shaped,long_shaped))
@@ -195,15 +231,22 @@ def create_map(data_filename):
             # for each point on the path, draw a circle that contains system information
             #  in a popup when clicked on
             for index, current_pos in enumerate(path):
-                mymap.circle_marker(location = [current_pos[0], current_pos[1]], radius = 1, 
-                                    #popup = 'Time: {} -- Lat, Lon: {:4.4f}, {:4.4f} -- Speed: {:3.2f} m/s -- Actual Heading: {:3.0f} deg -- Desired Heading: {:3.0f} deg -- Distance to Waypoint: {:.0f} m'.format(time[index], latitude[index], longitude[index], gps_speed[index], imu_heading[index], bearing_to_waypoint[index], distance_to_waypoint[index]), 
-                                    line_color = '#0000FF', fill_color = '#0000FF')
+                if index < 51:
+                    folium.CircleMarker(location = [current_pos[0], current_pos[1]], radius = 1, 
+    #                                     popup = 'Time: {} -- Lat, Lon: {:4.4f}, {:4.4f} -- Speed: {:3.2f} m/s -- Actual Heading: {:3.0f} deg -- Desired Heading: {:3.0f} deg -- Distance to Waypoint: {:.0f} m'.format(time[index], latitude[index], longitude[index], gps_speed[index], imu_heading[index], bearing_to_waypoint[index], distance_to_waypoint[index]), 
+                                        popup = 'Time: {} s -- Lat, Lon: {:4.4f}, {:4.4f} -- Distance to Target: {:.0f} m -- Actual Bearing: {:3.0f} deg -- Desired Heading: {:3.0f} deg -- Course Correction: {:3.0f}'.format(time[index], latitude[index], longitude[index], target_distance[index], current_bearing[index], desired_bearing[index], angle_to_turn[index]), 
+                                        color = '#0000FF', fill_color = '#0000FF').add_to(mymap)
+                else:
+                    folium.CircleMarker(location = [current_pos[0], current_pos[1]], radius = 1, 
+    #                                     popup = 'Time: {} -- Lat, Lon: {:4.4f}, {:4.4f} -- Speed: {:3.2f} m/s -- Actual Heading: {:3.0f} deg -- Desired Heading: {:3.0f} deg -- Distance to Waypoint: {:.0f} m'.format(time[index], latitude[index], longitude[index], gps_speed[index], imu_heading[index], bearing_to_waypoint[index], distance_to_waypoint[index]), 
+                                        popup = 'Time: {} s -- Lat, Lon: {:4.4f}, {:4.4f} -- Distance to Target: {:.0f} m -- Actual Bearing: {:3.0f} deg -- Desired Heading: {:3.0f} deg -- Course Correction: {:3.0f}'.format(time[index], latitude[index], longitude[index], target_distance[index], current_bearing[index], desired_bearing[index], angle_to_turn[index]), 
+                                        color = '#FF0000', fill_color = '#FF0000').add_to(mymap)
 
 
             # define filename - assumes that original datafile was .csv
             #   TODO: make this more robust
             map_filename = data_filename.replace('csv', 'html')
-            mymap.create_map(map_filename)
+            mymap.save(map_filename)
         
 
 
