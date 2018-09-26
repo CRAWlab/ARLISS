@@ -62,8 +62,6 @@ green_LED = pyb.LED(2)
 orange_LED = pyb.LED(3)
 blue_LED = pyb.LED(4)
 
-############## TRIGGER WIRE SETUP #################
-trigger_Pin = pyb.Pin('X3', pyb.Pin.IN, pyb.Pin.PULL_UP)
 
 ###################### IMU SETUP ######################
 #UART 1
@@ -101,4 +99,4 @@ accel = pyb.Accel()
 change_in_altitude = -100
 change_in_accel = [10,10,10]
 
-############# VARIABLES FOR DATA LOGGING ################
+pyb_switch = pyb.Switch()

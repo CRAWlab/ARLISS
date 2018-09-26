@@ -45,16 +45,16 @@ extint = pyb.ExtInt(pps_pin, pyb.ExtInt.IRQ_FALLING, pyb.Pin.PULL_UP, pps_callba
 ################### READ FOR FLIGHT TRIGGER WIRE #######################
 
 while True:
-    trigger_Pin_Value = trigger_Pin.value()
-    time.sleep_ms(50)
-    print('Trigger: {}'.format(trigger_Pin_Value))
 
-    if trigger_Pin_Value == 1:
+    time.sleep_ms(50)
+    print('Trigger: {}'.format(pyb_switch))
+
+    if pyb_switch == 1:
         print('Ready for Launch!')
         red_LED.off()
         green_LED.on()
         break
-        break # TODO: 09/11/18 - JEV - I don't think we need both of these.
+
 
     else:
         red_LED.toggle()
@@ -173,7 +173,7 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_accel_abs > [2,2
     print(change_in_accel_abs)
 
 ################# BURN OFF PARACHUTE ########################
-#functions.burn_parachute(400)
+functions.burn_parachute(400)
 log_sd = open('/sd/log.csv','a')
 log_sd.write('The parachute was burned at {}\n'.format(pyb.elapsed_millis(absolute_start_time)))
 log_sd.close()

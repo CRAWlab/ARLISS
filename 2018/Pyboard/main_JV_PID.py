@@ -54,7 +54,7 @@ while True:
         red_LED.off()
         green_LED.on()
         break
-        break # TODO: 09/11/18 - JEV - I don't think we need both of these.
+
 
     else:
         red_LED.toggle()
@@ -123,9 +123,9 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
     # During this check, let's record the altitude and location
     # We should be able to monitor the decent of the device this way.
     log_sd = open('/sd/log/csv', 'w')
-    log_sd.write('altitude:{},latitude:{},longitude:{}\n').format(altitude_1,
+    log_sd.write('altitude:{},latitude:{},longitude:{}\n'.format(altitude_1,
                                                                   functions.convert_latitude(my_gps.latitude)
-                                                                  functions.convert_longitude(my_gps.longitude))
+                                                                  functions.convert_longitude(my_gps.longitude)))
     log_sd.close()
 
     print('alt 1: {}'.format(altitude_1))
@@ -144,7 +144,7 @@ while pyb.elapsed_millis(start_time) < 60*1000*90 and change_in_altitude < -5:
     # Print it, then save it to the log file
     print('alt change: {}'.format(change_in_altitude))
     log_sd = open('/sd/log/csv', 'w')
-    log_sd.write('The change in altitude is {} at {}\n').format(change_in_altitude, pyb.elasped_millis(absolute_start_time))
+    log_sd.write('The change in altitude is {} at {}\n'.format(change_in_altitude, pyb.elasped_millis(absolute_start_time))
     log_sd.close()
 
 ############# CONFIRM DEVICE HAS LANDED USING ACCELEROMETER #############
