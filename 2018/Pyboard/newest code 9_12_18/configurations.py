@@ -72,7 +72,8 @@ razor_imu.start_streaming()
 
 ################### GLOBAL VARIABLES #########################
 
-force_start_timer = 90*1000*60
+FORCE_START_TIMER = 90*1000*60
+
 ################# VARIABLE FOR GPS ####################
 EARTH_RADIUS = 6370000
 MAG_LAT = 82.7
